@@ -40,6 +40,25 @@ EOSQL
 EOSQL
 }
 
+add_to_path() {
+    local dir="$1"
+    if [[ -d "$dir" ]]; then
+        export PATH="$PATH:$dir"
+        # if bash, add to ~/.bashrc
+        if [[ -n "$BASH_VERSION" ]]; then
+            echo "# >>> $dir >>>" >> ~/.bashrc
+            echo "export PATH=\"\$PATH:$dir\"" >> ~/.bashrc
+            echo "# <<< $dir <<<" >> ~/.bashrc
+        elif [[ -n "$ZSH_VERSION" ]]; then
+            echo "# >>> $dir >>>" >> ~/.zshrc
+            echo "export PATH=\"\$PATH:$dir\"" >> ~/.zshrc
+            echo "# <<< $dir <<<" >> ~/.zshrc
+        fi
+    else
+        echo "Directory $dir does not exist."
+    fi
+}
+
 install_qlever() {
     git clone https://github.com/ad-freiburg/qlever.git
 
@@ -57,6 +76,8 @@ install_qlever() {
     cmake --build . --target IndexBuilderMain --config Release
     cmake --build . --target ServerMain --config Release
 
+    add_to_path "$(pwd)"
+
     popd
 }
 
@@ -66,17 +87,7 @@ install_jena() {
     unzip apache-jena-5.4.0.zip
     rm apache-jena-5.4.0.zip
     # add apache-jena-5.4.0/bin to PATH
-    export PATH="$PATH:$(pwd)/apache-jena-5.4.0/bin"
-    # if bash, add to ~/.bashrc
-    if [[ -n "$BASH_VERSION" ]]; then
-        echo "# >>> Apache Jena >>>" >> ~/.bashrc
-        echo "export PATH=\"\$PATH:$(pwd)/apache-jena-5.4.0/bin\"" >> ~/.bashrc
-        echo "# <<< Apache Jena <<<" >> ~/.bashrc
-    elif [[ -n "$ZSH_VERSION" ]]; then
-        echo "# >>> Apache Jena >>>" >> ~/.zshrc
-        echo "export PATH=\"\$PATH:$(pwd)/apache-jena-5.4.0/bin\"" >> ~/.zshrc
-        echo "# <<< Apache Jena <<<" >> ~/.zshrc
-    fi
+    add_to_path "$(pwd)/apache-jena-5.4.0/bin"
 }
 
 
@@ -101,6 +112,8 @@ echo "Install Qlever? [y/N]"
 read -r install_qlever_choice
 if [[ "$install_qlever_choice" == "y" || "$install_qlever_choice" == "Y" ]]; then
     install_qlever
+    echo "Qlever installed successfully."
+    echo "Please restart your terminal or run 'source ~/.bashrc' or 'source ~/.zshrc' to update your PATH."
 else
     echo "Skipping Qlever installation."
 fi
