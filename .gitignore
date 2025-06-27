@@ -13,3 +13,4 @@ node_modules
 *.err
 *.out
 **/user-study/private
+apache-jena-5.4.0
