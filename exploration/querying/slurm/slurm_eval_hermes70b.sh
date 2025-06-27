@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 #SBATCH --job-name=onset_eval_hermes70b
 #SBATCH -a 0-3%1
-#SBATCH --gres=gpu:4 
-#SBATCH --partition=hcc
+#SBATCH --gres=gpu:2
 #SBATCH -c 32
 
 datasets=("dbpedia" "bto" "uniprot" "yago")

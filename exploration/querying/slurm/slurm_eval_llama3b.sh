@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 #SBATCH --job-name=onset_eval_llama3b
-#SBATCH -a 1-3%1
+#SBATCH -a 0-3%1
 #SBATCH --gres=gpu:2
-#SBATCH --partition=hcc
-#SBATCH -c 16
+#SBATCH -c 32
 
 datasets=("dbpedia" "bto" "uniprot" "yago")
 

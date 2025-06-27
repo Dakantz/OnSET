@@ -2,8 +2,7 @@
 #SBATCH --job-name=onset_eval_mistral
 #SBATCH -a 0-3%1
 #SBATCH --gres=gpu:4
-#SBATCH --partition=hcc
-#SBATCH -c 16
+#SBATCH -c 32
 
 datasets=("dbpedia" "bto" "uniprot" "yago")
 
@@ -20,3 +19,5 @@ start_db $selected_dataset
 
 echo "Running normal"
 python query-eval.py --dataset $selected_dataset --cfg_idx $cfg_idx
+
+stop_db $selected_dataset
