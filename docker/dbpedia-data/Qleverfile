@@ -7,7 +7,7 @@
 [data]
 NAME         = dbpedia
 DATABUS_URL  = https://databus.dbpedia.org/dbpedia/collections/latest-core
-GET_DATA_CMD = cd rdf-input && sh download.sh
+GET_DATA_CMD = mkdir -p nt && cd rdf-input && bash download.sh
 DESCRIPTION  = RDF data from ${DATABUS_URL}
 
 [index]
@@ -23,8 +23,7 @@ MEMORY_FOR_QUERIES = 8G
 CACHE_MAX_SIZE     = 2G
 
 [runtime]
-SYSTEM = docker
-IMAGE  = docker.io/adfreiburg/qlever:latest
+SYSTEM = native
 
 [ui]
 UI_CONFIG = dbpedia

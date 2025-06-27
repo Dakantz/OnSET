@@ -26,8 +26,7 @@ ACCESS_TOKEN       = ${data:NAME}_AlJ6AXYBkZiB
 MEMORY_FOR_QUERIES = 30G
 
 [runtime]
-SYSTEM = docker
-IMAGE  = docker.io/adfreiburg/qlever:latest
+SYSTEM = native
 
 [ui]
 UI_CONFIG = yago-4

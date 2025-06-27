@@ -1,14 +1,17 @@
 #!/bin/bash
 #SBATCH --job-name=onset_querygen
-#SBATCH -c 1
-#SBATCH --mem 8G
+#SBATCH --cpus-per-task=32
 #SBATCH -a 0-4%2
-#SBATCH --account=bkantz
-#SBATCH --output=logs/gen_%A_%a.out
-#SBATCH --error=logs/gen_%A_%a.err
+#SBATCH --gpus=4
+#SBATCH --partition=hcc
+
+source start_databases.sh
 
 cd ..
-source ../../backend/.venv/bin/activate
+
+start_db "$SLURM_ARRAY_TASK_ID"
 
 echo "Running query generator for dataset $SLURM_ARRAY_TASK_ID"
 python querygen.py --dataset "$SLURM_ARRAY_TASK_ID"
+
+stop_db "$SLURM_ARRAY_TASK_ID"

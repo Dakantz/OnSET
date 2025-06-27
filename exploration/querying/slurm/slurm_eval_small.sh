@@ -1,14 +1,13 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #SBATCH --job-name=onset_eval_small
-#SBATCH -c 1
-#SBATCH --mem 6000M
-#SBATCH -a 0-4%2
-#SBATCH --account=bkantz
-#SBATCH --output=logs/eval_%A_%a.out
-#SBATCH --error=logs/eval_%A_%a.err
+#SBATCH -a 0-3%1
+#SBATCH --gres=gpu:2
+#SBATCH --partition=hcc
+#SBATCH -c 32
 
+source start_databases.sh
 cd ..
-source ../../backend/.venv/bin/activate
+start_db $selected_dataset
 
 datasets=("dbpedia" "bto" "uniprot" "yago")
 

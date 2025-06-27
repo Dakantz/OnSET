@@ -5,6 +5,7 @@ sys.path.insert(0, os.path.abspath("../.."))
 sys.path.append(os.path.abspath("../../backend"))
 sys.path.append(os.path.abspath(""))
 
+import rdflib.plugins
 from rdflib.plugins.stores.sparqlstore import SPARQLStore
 
 from backend.ontology import OntologyManager, OntologyConfig, Graph
@@ -37,9 +38,8 @@ from backend.eval_config import (
 db_setups = [
     # OLYMPICS_CONFIGS[-1],
     DBPEDIA_CONFIGS[-1],
-    UNIPROT_CONFIGS[-1],
     BTO_CONFIGS[-1],
-    DNB_CONFIGS[-1],
+    UNIPROT_CONFIGS[-1],
     YAGO_CONFIGS[-1],
     GUTBRAINIE_CONFIGS[-1],
     DBLP_CONFIGS[-1],
@@ -85,8 +85,8 @@ if __name__ == "__main__":
     llm_man = LLMQuery(guidance_manager)
     guidance_manager.llama_model
     print(guidance_manager.identifier)
-    initiator.initate(force=True, delete_tables=True)
-    llm_man.initate(force=True)
+    initiator.initate(force=True, delete_tables=True, reset=True)
+    llm_man.initiate(force=True)
 
     print("Database initialised with setup:", setup.name)
 # %%

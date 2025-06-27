@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-#SBATCH --job-name=onset_eval_mistral
+#SBATCH --job-name=onset_eval_hermes70b
 #SBATCH -a 0-3%1
-#SBATCH --gres=gpu:4
+#SBATCH --gres=gpu:4 
 #SBATCH --partition=hcc
-#SBATCH -c 16
+#SBATCH -c 32
 
 datasets=("dbpedia" "bto" "uniprot" "yago")
 
 dataset_id=$(($SLURM_ARRAY_TASK_ID % 4))
-cfg_idx=0
+cfg_idx=4
 selected_dataset=${datasets[$dataset_id]}
 echo "dataset_id: $dataset_id"
 echo "selected_dataset: $selected_dataset"
@@ -20,3 +20,5 @@ start_db $selected_dataset
 
 echo "Running normal"
 python query-eval.py --dataset $selected_dataset --cfg_idx $cfg_idx
+
+stop_db $selected_dataset

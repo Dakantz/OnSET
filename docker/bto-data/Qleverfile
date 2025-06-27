@@ -23,8 +23,7 @@ MEMORY_FOR_QUERIES = 4G
 CACHE_MAX_SIZE     = 2G
 
 [runtime]
-SYSTEM = docker
-IMAGE  = qlever:invalid
+SYSTEM = native
 
 [ui]
 UI_CONFIG = bto

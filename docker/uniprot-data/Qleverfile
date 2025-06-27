@@ -23,8 +23,7 @@ MEMORY_FOR_QUERIES = 2G
 CACHE_MAX_SIZE     = 1G
 
 [runtime]
-SYSTEM = docker
-IMAGE  = docker.io/adfreiburg/qlever:latest
+SYSTEM = native
 
 [ui]
 UI_CONFIG = uniprot

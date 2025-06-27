@@ -34,7 +34,7 @@ CACHE_MAX_SIZE     = 2G
 
 [runtime]
 SYSTEM = docker
-IMAGE  = qlever:invalid
+IMAGE  = docker.io/adfreiburg/qlever:latest
 
 [ui]
 UI_CONFIG = dnb
