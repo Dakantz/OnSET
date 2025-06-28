@@ -579,6 +579,11 @@ class LLMQuery(Initationatable):
             # remove entities that are not
             return erl_enriched
 
+    def initate(self, reset=True, config = None, force=True, *args, **kwargs):
+        raise NotImplementedError(
+            "LLMQuery does not support the initate method, use initiate() instead."
+        )
+
     def initiate(self, force=False, n_queries=10, k_min=2, k_max=4):
         do_init = False
         if force:
@@ -599,7 +604,7 @@ class LLMQuery(Initationatable):
         queries: list[tuple[str, EnrichedEntitiesRelations]] = []
         for i, k in enumerate(tqdm.tqdm(k_s)):
             query_graph = choose_graph(
-                k, guidance_man=self.guidance_man, seed=i, top_k=10
+                k, topic_man=self.guidance_man, seed=i, top_k=10
             )
             query_graph_reduced = reduce_erl(query_graph)
             query_response = self.guidance_man.llama_model.create_chat_completion(

@@ -6,6 +6,7 @@
 
 
 datasets=("dbpedia" "bto" "uniprot" "yago")
+dataset_id=$(($SLURM_ARRAY_TASK_ID % 4))
 selected_dataset=${datasets[$dataset_id]}
 echo "SLURM_ARRAY_TASK_ID: $SLURM_ARRAY_TASK_ID"
 

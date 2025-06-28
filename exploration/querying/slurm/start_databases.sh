@@ -75,5 +75,5 @@ stop_db() {
     qlever stop
     popd
     echo "$db_name database stopped."
-    pg_ctl stop -D /home/funkeydunkey/postgresql/data -l /home/funkeydunkey/postgresql/server.log start
+    pg_ctl stop -D /home/funkeydunkey/postgresql/data -m smart
 }
