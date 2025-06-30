@@ -1,8 +1,17 @@
 #!/usr/bin/env bash
 #SBATCH --job-name=onset_eval_hermes70b
-#SBATCH -a 0-3%1
+#SBATCH -a 0-4%1
 #SBATCH --gres=gpu:2
 #SBATCH -c 32
+#SBATCH --partition=ivc
+#SBATCH --output=logs/init_%A_%a.out
+#SBATCH --error=logs/init_%A_%a.err
+
+source ~/.zshrc
+
+conda activate onset-env
+
+source ../../../backend/.venv/bin/activate
 
 datasets=("dbpedia" "bto" "uniprot" "yago")
 

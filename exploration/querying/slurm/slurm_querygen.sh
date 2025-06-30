@@ -3,7 +3,9 @@
 #SBATCH --cpus-per-task=32
 #SBATCH -a 0-4%2
 #SBATCH --gpus=4
-#SBATCH --partition=hcc
+#SBATCH --partition=ivc
+#SBATCH --output=logs/init_%A_%a.out
+#SBATCH --error=logs/init_%A_%a.err
 
 source start_databases.sh
 

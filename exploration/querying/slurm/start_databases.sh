@@ -8,8 +8,8 @@ if [ -z "$SLURM_ARRAY_TASK_ID" ]; then
 fi
 
 export PGPORT=5434
-
-pg_ctl -D /home/funkeydunkey/postgresql/data -l /home/funkeydunkey/postgresql/server.log start
+export PGDATA=../../../docker/onset-data/pg-data #$HOME/postgresql/data
+pg_ctl -D $PGDATA -l $HOME/postgresql/server.log -o "-p 5434 -k /tmp -i" start
 
 redis-server &
 
@@ -20,12 +20,12 @@ redis-server &
 #psql -U funkeydunkey -c "ALTER USER postgres PASSWORD 'postgresql'; DROP DATABASE funkeydunkey; CREATE DATABASE postgres;"
 #psql -U funkeydunkey -c "CREATE ROLE postgres SUPERUSER CREATEDB CREATEROLE INHERIT LOGIN PASSWORD 'postgres';";
 
-createdb onset
-createdb onset-dbpedia
-createdb onset-uniprot
-createdb onset-bto
-createdb onset-dnb
-createdb onset-yago
+createdb -U postgres onset
+createdb -U postgres onset-dbpedia
+createdb -U postgres onset-uniprot
+createdb -U postgres onset-bto
+createdb -U postgres onset-dnb
+createdb -U postgres onset-yago
 
 # qlever
 # /home/funkeydunkey/OnSET/qlever/build/ServerMain
@@ -75,5 +75,5 @@ stop_db() {
     qlever stop
     popd
     echo "$db_name database stopped."
-    pg_ctl stop -D /home/funkeydunkey/postgresql/data -m smart
+    pg_ctl stop -D $PGDATA -m smart
 }

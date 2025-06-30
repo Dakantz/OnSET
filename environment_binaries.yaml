@@ -1,0 +1,27 @@
+# TODO: requires additional manual build outside! `CMAKE_ARGS="-DGGML_CUDA=on" pip install llama-cpp-python==0.3.4 --upgrade --force-reinstall --no-cache-dir`
+name: onset
+channels:
+  - conda-forge
+  - nvidia
+dependencies:
+  - python=3.12.8
+  - pip
+  - cuda #=12.4.1
+  - cuda-toolkit #=12.4.1
+  - cuda-runtime #=12.4.1
+  - cuda-libraries-dev
+  - cuda-libraries
+  - cudnn
+  #- cudatoolkit
+  #- cudatoolkit-dev
+  #- cuda-cudart-dev
+  - compilers
+  - cmake
+  - redis
+  - postgresql
+  - postgis
+  - pgvector
+  - libjemalloc
+  - boost-cpp
+  - pip:
+    - redis-om

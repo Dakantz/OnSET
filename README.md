@@ -33,3 +33,33 @@ qlever start
    - then start the frontend using `npm run dev`
 * Profit?
 
+
+
+### Cluster setup instructions
+
+* Download and build qlever
+
+```
+cd ~
+git clone https://github.com/ad-freiburg/qlever.git
+cd qlever/bin
+cmake ..
+cmake --build . --target IndexBuilderMain ServerMain -j
+```
+
+* Make postgres ready
+
+```bash
+cd ~
+mkdir postgresql/data
+cd postgresql/data
+pg_ctl initdb -D .
+
+pg_ctl -D . -l $HOME/postgresql/server.log -o "-p 5434 -k /tmp -i" start
+```
+then run:
+```bash
+createdb -U $USER -p 5434 $USER
+psql -U $USER -p 5434 -c "ALTER USER postgres PASSWORD 'postgresql'; DROP DATABASE $USER; CREATE DATABASE postgres;"
+psql -U $USER -p 5434  -c "CREATE ROLE postgres SUPERUSER CREATEDB CREATEROLE INHERIT LOGIN PASSWORD 'postgres';";
+```
