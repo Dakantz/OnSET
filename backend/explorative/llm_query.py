@@ -478,6 +478,8 @@ class LLMQuery(Initationatable):
                     )
                     .limit(1)
                 ).first()
+                if link_db is None:
+                    return None
                 return EnrichedConstraint(
                     constraint=link_db[0].from_db(self.guidance_man.oman),
                     **constraint.model_dump(),
@@ -497,11 +499,14 @@ class LLMQuery(Initationatable):
                     )
                     .limit(1)
                 ).first()
+                constraints = [enrich_constraint(c) for c in entity.constraints]
+                constraints = [c for c in constraints if c is not None]
+
                 return EnrichedEntity(
                     subject=self.guidance_man.oman.enrich_subject(
                         subject_db[0].subject_id
                     ),
-                    constraints=[enrich_constraint(c) for c in entity.constraints],
+                    constraints=constraints,
                     **entity.model_dump(exclude=["constraints"]),
                 )
 
@@ -579,7 +584,7 @@ class LLMQuery(Initationatable):
             # remove entities that are not
             return erl_enriched
 
-    def initate(self, reset=True, config = None, force=True, *args, **kwargs):
+    def initate(self, reset=True, config=None, force=True, *args, **kwargs):
         raise NotImplementedError(
             "LLMQuery does not support the initate method, use initiate() instead."
         )
@@ -603,9 +608,7 @@ class LLMQuery(Initationatable):
         k_s = rs.randint(k_min, k_max, n_queries)
         queries: list[tuple[str, EnrichedEntitiesRelations]] = []
         for i, k in enumerate(tqdm.tqdm(k_s)):
-            query_graph = choose_graph(
-                k, topic_man=self.guidance_man, seed=i, top_k=10
-            )
+            query_graph = choose_graph(k, topic_man=self.guidance_man, seed=i, top_k=10)
             query_graph_reduced = reduce_erl(query_graph)
             query_response = self.guidance_man.llama_model.create_chat_completion(
                 # grammar=self.grammar_erl,
