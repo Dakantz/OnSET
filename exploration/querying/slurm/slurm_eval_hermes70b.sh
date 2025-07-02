@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #SBATCH --job-name=onset_eval_hermes70b
-#SBATCH -a 0-4%1
+#SBATCH -a 0-3%1
 #SBATCH --gres=gpu:2
 #SBATCH -c 32
 #SBATCH --partition=ivc
