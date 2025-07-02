@@ -140,12 +140,12 @@ if __name__ == "__main__":
     config = OntologyConfig()
 
     ontology_manager = OntologyManager(config, graph)
-    topic_man = GuidanceManager(
+    guidance_man = GuidanceManager(
         ontology_manager,
         llm_model_id=setup.model_id,
         conn_str=setup.conn_str,
     )
-    llama_model = topic_man.llama_model
+    llama_model = guidance_man.llama_model
 
     # %%
 
@@ -157,7 +157,7 @@ if __name__ == "__main__":
     for n_node in n_nodes:
         for i in range(n_examples):
             try:
-                erl = choose_graph(seed=i, max_nodes=n_node, topic_man=topic_man)
+                erl = choose_graph(seed=i, max_nodes=n_node, guidance_man=guidance_man)
                 correct_n_nodes = len(erl.entities)
                 reduced_erl = reduce_erl(erl)
                 response = llama_model.create_chat_completion(
