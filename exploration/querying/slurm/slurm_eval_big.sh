@@ -4,8 +4,8 @@
 #SBATCH --mem 11G
 #SBATCH -a 0-4%2
 #SBATCH --partition=ivc
-#SBATCH --output=logs/init_%A_%a.out
-#SBATCH --error=logs/init_%A_%a.err
+#SBATCH --output=logs/eval_%A_%a.out
+#SBATCH --error=logs/eval_%A_%a.err
 
 cd ..
 source ../../backend/.venv/bin/activate

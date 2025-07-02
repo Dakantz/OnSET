@@ -4,8 +4,8 @@
 #SBATCH --gres=gpu:2
 #SBATCH -c 32
 #SBATCH --partition=ivc
-#SBATCH --output=logs/init_%A_%a.out
-#SBATCH --error=logs/init_%A_%a.err
+#SBATCH --output=logs/eval_%A_%a.out
+#SBATCH --error=logs/eval_%A_%a.err
 
 datasets=("dbpedia" "bto" "uniprot" "yago")
 
