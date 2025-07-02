@@ -81,7 +81,7 @@ class CandidateEntity(Entity):
 class Candidates(EntitiesRelations):
     relations: list[CandidateRelation] = Field([])
     entities: list[CandidateEntity] = Field([])
-    constraints: list[CandidateConstraint] = Field([])
+    # constraints: list[CandidateConstraint] = Field([])
 
 
 class EnrichedConstraint(Constraint):
@@ -90,7 +90,7 @@ class EnrichedConstraint(Constraint):
 
 class EnrichedEntity(Entity):
     subject: Subject
-    constraints: list[EnrichedConstraint] = Field([])
+    # constraints: list[EnrichedConstraint] = Field([])
 
 
 class EnrichedRelation(Relation):
@@ -156,10 +156,10 @@ def random_downgrade(cls: SubjectInDB, rs: np.random.RandomState) -> SubjectInDB
 
 
 def choose_graph(
-    max_nodes=4, top_k=top_k, seed=seed, max_tries=5, topic_man: GuidanceManager = None
+    max_nodes=4, top_k=top_k, seed=seed, max_tries=5, guidance_man: GuidanceManager = None
 ):
     rs = np.random.RandomState(seed)
-    with Session(topic_man.engine) as session:
+    with Session(guidance_man.engine) as session:
         session.execute(text("SET TRANSACTION READ ONLY"))
         session.autoflush = False
 
@@ -321,14 +321,14 @@ def choose_graph(
         enriched_erl = EnrichedEntitiesRelations(
             entities=[
                 EnrichedEntity(
-                    subject=topic_man.oman.enrich_subject(entity.subject.subject_id),
+                    subject=guidance_man.oman.enrich_subject(entity.subject.subject_id),
                     **entity.model_dump(exclude=["subject"]),
                 )
                 for entity in current_nodes.values()
             ],
             relations=[
                 EnrichedRelation(
-                    link=relation.link.from_db(topic_man.oman),
+                    link=relation.link.from_db(guidance_man.oman),
                     **relation.model_dump(exclude=["link"]),
                 )
                 for relation in current_links

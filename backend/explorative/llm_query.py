@@ -52,7 +52,7 @@ from initiator import Initationatable
 
 # System prompt describes information given to all conversations
 ERL_PROMPT_SYSTEM = """
-Return all the entity relations and constraint within the prompt in the form of JSON output. The output should be a list of all entities and their constraints, as well as the relations between them. Make sure to include all entities and targets in the list of entities. Constraints should only be included in the list of entities they are associated with.
+Return all the entity relations within the prompt in the form of JSON output. The output should be a list of all entities and their constraints, as well as the relations between them. Make sure to include all entities and targets in the list of entities
 """
 ERL_SAMPLE = EntitiesRelations(
     relations=[
@@ -63,9 +63,9 @@ ERL_SAMPLE = EntitiesRelations(
         Entity(
             identifier="person 1",
             type="person",
-            constraints=[
-                Constraint(property="birth_date", value="1990", modifier="greater_than")
-            ],
+            # constraints=[
+            #     Constraint(property="birth_date", value="1990", modifier="greater_than")
+            # ],
         ),
         Entity(identifier="work 1", type="work", constraints=[]),
         Entity(identifier="place 1", type="place", constraints=[]),
@@ -73,7 +73,7 @@ ERL_SAMPLE = EntitiesRelations(
 )
 # Example prompt demonstrating the output we are looking for
 ERL_PROMPT_EXAMPLE = (
-    "the birth place of an author of a work where the author is born after 1990",
+    "the birth place of an author of a work",
     ERL_SAMPLE.model_dump_json(),
 )
 
@@ -91,28 +91,28 @@ RAG_PROMPT_EXAMPLE_CANDIDATES = Candidates(
         CandidateEntity(identifier="work 1", type="work", score=0.9),
         CandidateEntity(identifier="song 1", type="song", score=0.6),
     ],
-    constraints=[
-        CandidateConstraint(
-            property="birth date",
-            value="1990",
-            modifier="greater_than",
-            score=0.9,
-            type="sko:DateTime",
-            entity="person 1",
-        ),
-        CandidateConstraint(
-            property="death year",
-            value="180cm",
-            modifier="greater_than",
-            score=0.8,
-            type="sko:DateTime",
-            entity="person 1",
-        ),
-    ],
+    # constraints=[
+    #     CandidateConstraint(
+    #         property="birth date",
+    #         value="1990",
+    #         modifier="greater_than",
+    #         score=0.9,
+    #         type="sko:DateTime",
+    #         entity="person 1",
+    #     ),
+    #     CandidateConstraint(
+    #         property="death year",
+    #         value="180cm",
+    #         modifier="greater_than",
+    #         score=0.8,
+    #         type="sko:DateTime",
+    #         entity="person 1",
+    #     ),
+    # ],
 )
 
 RAG_PROMPT_SYSTEM = """
-Return all the entity relations and constraint within the prompt in the form of JSON output. The output should be a list of all entities and their constraints, as well as the relations between them. Make sure to include all entities and targets in the list of entities. Constraints should only be included in the list of entities they are associated with.
+Return all the entity relations within the prompt in the form of JSON output. The output should be a list of all entitie, as well as the relations between them. Make sure to include all entities and targets in the list of entities. Constraints should only be included in the list of entities they are associated with.
 """
 
 RAG_PROMPT_EXPECTED_OUTPUT = EntitiesRelations(
@@ -124,13 +124,13 @@ RAG_PROMPT_EXPECTED_OUTPUT = EntitiesRelations(
         Entity(
             identifier="person 1",
             type="person",
-            constraints=[
-                Constraint(
-                    property="birth date",
-                    value="1.1.1990",
-                    modifier="greater_than",
-                )
-            ],
+            # constraints=[
+            #     Constraint(
+            #         property="birth date",
+            #         value="1.1.1990",
+            #         modifier="greater_than",
+            #     )
+            # ],
         ),
         Entity(identifier="work 1", type="work", constraints=[]),
         Entity(identifier="place 1", type="place", constraints=[]),
@@ -336,42 +336,41 @@ class LLMQuery(Initationatable):
                 )
                 for res in top_results.results
             ]
-            candidate_ids = [c.subject.subject_id for c in candidates]
             entity_candidates.extend(candidates)
-            for constraint in entity.constraints:
-                top_results = self.guidance_man.search_fuzzy(
-                    query=FuzzyQuery(
-                        q=f"The {constraint.property} of is {constraint.modifier} {constraint.value}",
-                        limit=candidate_limit,
-                        from_id=candidate_ids,
-                        type=RETURN_TYPE.LINK,
-                        relation_type=RELATION_TYPE.PROPERTY,
-                        include_thing=False,
-                    )
-                )
-                constraint_candidates.extend(
-                    [
-                        CandidateConstraint(
-                            property=res.link.label,
-                            value=None,
-                            modifier=None,
-                            score=res.score,
-                            type=res.link.to_proptype,
-                            entity=res.link.from_subject.subject_id,
-                            link=res.link,
-                        )
-                        for res in top_results.results
-                    ]
-                )
+            # candidate_ids = [c.subject.subject_id for c in candidates]
+            # for constraint in entity.constraints:
+            #     top_results = self.guidance_man.search_fuzzy(
+            #         query=FuzzyQuery(
+            #             q=f"The {constraint.property} of is {constraint.modifier} {constraint.value}",
+            #             limit=candidate_limit,
+            #             from_id=candidate_ids,
+            #             type=RETURN_TYPE.LINK,
+            #             relation_type=RELATION_TYPE.PROPERTY,
+            #             include_thing=False,
+            #         )
+            #     )
+            #     constraint_candidates.extend(
+            #         [
+            #             CandidateConstraint(
+            #                 property=res.link.label,
+            #                 value=None,
+            #                 modifier=None,
+            #                 score=res.score,
+            #                 type=res.link.to_proptype,
+            #                 entity=res.link.from_subject.subject_id,
+            #                 link=res.link,
+            #             )
+            #             for res in top_results.results
+            #         ]
+            #     )
         candidates = Candidates(
             relations=relation_candidates,
             entities=entity_candidates,
-            constraints=constraint_candidates,
+            # constraints=constraint_candidates,
         )
         return candidates
 
     def build_constrained_classes(self, candidates: Candidates) -> BaseModel:
-        constrained_classes = []
         ALLOWED_ENTITY_TYPES = Enum(
             "ALLOWED_ENTITY_TYPES",
             {e.subject.subject_id: e.type for e in candidates.entities},
@@ -379,12 +378,13 @@ class LLMQuery(Initationatable):
         if len(candidates.entities) == 0:
             ALLOWED_ENTITY_TYPES = str
 
-        ALLOWED_CONSTRAINT_TYPES = Enum(
-            "ALLOWED_CONSTRAINT_TYPES",
-            {c.link.property_id: c.property for c in candidates.constraints},
-        )
-        if len(candidates.constraints) == 0:
-            ALLOWED_CONSTRAINT_TYPES = str
+        # constrained_classes = []
+        # ALLOWED_CONSTRAINT_TYPES = Enum(
+        #     "ALLOWED_CONSTRAINT_TYPES",
+        #     {c.link.property_id: c.property for c in candidates.constraints},
+        # )
+        # if len(candidates.constraints) == 0:
+        #     ALLOWED_CONSTRAINT_TYPES = str
 
         ALLOWED_RELATION_TYPES = Enum(
             "ALLOWED_RELATION_TYPES",
@@ -402,22 +402,22 @@ class LLMQuery(Initationatable):
                 "target": (str, ...),
             },
         )
-        ConstrainedConstraint = create_model(
-            "ConstrainedConstraint",
-            # (BaseModel,),
-            **{
-                "property": (ALLOWED_CONSTRAINT_TYPES, ...),
-                "value": (str, ...),
-                "modifier": (str, ...),
-            },
-        )
+        # ConstrainedConstraint = create_model(
+        #     "ConstrainedConstraint",
+        #     # (BaseModel,),
+        #     **{
+        #         "property": (ALLOWED_CONSTRAINT_TYPES, ...),
+        #         "value": (str, ...),
+        #         "modifier": (str, ...),
+        #     },
+        # )
         ConstrainedEntity = create_model(
             "ConstrainedEntity",
             # (BaseModel,),
             **{
                 "type": (ALLOWED_ENTITY_TYPES, ...),
                 "identifier": (str, ...),
-                "constraints": (list[ConstrainedConstraint], []),
+                # "constraints": (list[ConstrainedConstraint], []),
             },
         )
         ConstrainedEntitiesRelations = create_model(
@@ -462,28 +462,28 @@ class LLMQuery(Initationatable):
                     **relation.model_dump(),
                 )
 
-            def enrich_constraint(constraint: Constraint) -> EnrichedConstraint:
-                value = (
-                    constraint.property.value
-                    if isinstance(constraint.property, Enum)
-                    else constraint.property
-                )
-                link_db = session.execute(
-                    select(SubjectLinkDB)
-                    .where(
-                        SubjectLinkDB.label == value,
-                        SubjectLinkDB.property_id.in_(
-                            [rel.link.property_id for rel in candidates.constraints]
-                        ),
-                    )
-                    .limit(1)
-                ).first()
-                if link_db is None:
-                    return None
-                return EnrichedConstraint(
-                    constraint=link_db[0].from_db(self.guidance_man.oman),
-                    **constraint.model_dump(),
-                )
+            # def enrich_constraint(constraint: Constraint) -> EnrichedConstraint:
+            #     value = (
+            #         constraint.property.value
+            #         if isinstance(constraint.property, Enum)
+            #         else constraint.property
+            #     )
+            #     link_db = session.execute(
+            #         select(SubjectLinkDB)
+            #         .where(
+            #             SubjectLinkDB.label == value,
+            #             SubjectLinkDB.property_id.in_(
+            #                 [rel.link.property_id for rel in candidates.constraints]
+            #             ),
+            #         )
+            #         .limit(1)
+            #     ).first()
+            #     if link_db is None:
+            #         return None
+            #     return EnrichedConstraint(
+            #         constraint=link_db[0].from_db(self.guidance_man.oman),
+            #         **constraint.model_dump(),
+            #     )
 
             def enrich_entity(entity: Entity) -> EnrichedEntity:
                 value = (
@@ -499,14 +499,14 @@ class LLMQuery(Initationatable):
                     )
                     .limit(1)
                 ).first()
-                constraints = [enrich_constraint(c) for c in entity.constraints]
-                constraints = [c for c in constraints if c is not None]
+                # constraints = [enrich_constraint(c) for c in entity.constraints]
+                # constraints = [c for c in constraints if c is not None]
 
                 return EnrichedEntity(
                     subject=self.guidance_man.oman.enrich_subject(
                         subject_db[0].subject_id
                     ),
-                    constraints=constraints,
+                    # constraints=constraints,
                     **entity.model_dump(exclude=["constraints"]),
                 )
 
