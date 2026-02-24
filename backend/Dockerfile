@@ -32,7 +32,7 @@ ENV PATH="/root/.local/bin/:$PATH"
 WORKDIR /app
 ADD pyproject.toml /app
 ADD uv.lock /app
-RUN CMAKE_ARGS="-DGGML_CUDA=on  -DLLAVA_BUILD=off" uv sync
+RUN CC="/usr/bin/gcc" CMAKE_ARGS="-DGGML_CUDA=on  -DLLAVA_BUILD=off" uv sync
 
 WORKDIR /app
 
