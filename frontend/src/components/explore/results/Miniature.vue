@@ -25,7 +25,7 @@
     </Expandable>
 </template>
 <script setup lang="ts">
-import { ref, reactive, computed, defineProps, onMounted, watch, type Ref } from 'vue'
+import { ref, reactive, computed,  onMounted, watch, type Ref } from 'vue'
 import Propview from '../elements/panels/Propview.vue';
 import { PropertiesOpenEvent, scalingFactors, type InstanceNodeLinkRepository } from '@/utils/sparql/querymapper';
 import { type Vector2Like } from 'three';

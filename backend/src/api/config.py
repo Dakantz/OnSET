@@ -44,7 +44,7 @@ class ManMan:
         self.config_name = config_name
         self.idx = idx
 
-        db_config = ALL_CONFIG_MAP["gutbrainie"][-2]
+        db_config = ALL_CONFIG_MAP[config_name][idx]
         # db_config = GUTBRAINIE_CONFIGS[1]
 
         db_config.conn_str = os.getenv("DB_CONN_STR", db_config.conn_str)
@@ -58,7 +58,7 @@ class ManMan:
         )
         print("Using DB config:", db_config)
         self.db_config = db_config
-        
+
         self.base_path = base_path
         self.onto_path = onto_path
         self.start_systems()

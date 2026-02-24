@@ -14,7 +14,7 @@
     </div>
 </template>
 <script setup lang="ts">
-import { ref, watch, reactive, computed, onMounted, defineProps } from 'vue'
+import { ref, watch, reactive } from 'vue'
 import { SubjectNode, Link, SubQueryType } from '@/utils/sparql/representation';
 import { PropertiesOpenEvent, QueryMapper, ResultList } from '@/utils/sparql/querymapper';
 import { Vector2, type Vector2Like } from 'three';

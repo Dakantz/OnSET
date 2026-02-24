@@ -10,7 +10,7 @@
     </g>
 </template>
 <script setup lang="ts">
-import { defineProps, reactive, watch, computed } from 'vue'
+import { reactive, watch, computed } from 'vue'
 
 import { Link, NodeState, SubjectNode } from '@/utils/sparql/representation';
 import { NodeLinkRepository } from '@/utils/sparql/store';
@@ -19,6 +19,7 @@ import NodeComp from './Node.vue';
 import LinkComp from './Link.vue';
 import { jsonClone } from '@/utils/parsing';
 import { extentNodes } from '../../../utils/sparql/helpers';
+import { ViewPortState } from '@/utils/editing';
 
 
 const emit = defineEmits<{
@@ -28,6 +29,7 @@ const emit = defineEmits<{
 const props = defineProps<{
     store: NodeLinkRepository,
     evt: SelectorOpenEvent | null,
+    viewport: ViewPortState
 }>()
 
 const propDragData = reactive({
@@ -45,7 +47,7 @@ watch(() => props.evt, (evt) => {
     }
 }, { immediate: true })
 const startPropDrag = (evt: SelectorOpenEvent) => {
-    if(!props.evt){
+    if (!props.evt) {
         return;
     }
     propDragData.drag = true
@@ -76,8 +78,8 @@ const extent = computed(() => {
 const mouse_move = (event: MouseEvent) => {
     if (propDragData.drag) {
         // Update the position of the dragged link and node based on mouse position
-        const x = event.offsetX;
-        const y = event.offsetY;
+        const x = event.offsetX / props.viewport.scale - props.viewport.offset.x;
+        const y = event.offsetY / props.viewport.scale - props.viewport.offset.y;
         let offsetX = 0;
         let offsetY = 0;
         if (props.evt.side == OpenEventType.TO) {
@@ -131,7 +133,7 @@ const stopPropDrag = () => {
         }
         props.store.links.push(propDragData.dragged_link)
         console.log("LinkComposer selection complete", propDragData.attaching_to, propDragData.dragged_node, propDragData.dragged_link)
-        
+
         const evt: SelectorOpenEvent = {
             side: propDragData.attaching_to ? OpenEventType.LINK : props.evt.side,
             node: propDragData.attaching_to || propDragData.dragged_node,

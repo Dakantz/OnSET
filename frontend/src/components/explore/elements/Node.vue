@@ -68,7 +68,7 @@
     </g>
 </template>
 <script setup lang="ts">
-import { ref, watch, reactive, computed, onMounted, defineProps, onBeforeUpdate, type Prop, onUpdated, onRenderTriggered } from 'vue'
+import { ref, watch, reactive, computed, onMounted, onBeforeUpdate, type Prop, onUpdated, onRenderTriggered } from 'vue'
 import { InstanceNode, SubjectNode as NodeRepr, NodeState, SubQuery } from '@/utils/sparql/representation';
 import { CONSTRAINT_PADDING, CONSTRAINT_WIDTH, DisplayMode, InstanceSelectorOpenEvent, OpenEventType, SelectorOpenEvent } from '@/utils/sparql/helpers';
 import Sublink from './Subquery.vue';
@@ -83,7 +83,7 @@ const emit = defineEmits<{
     instanceSearchClicked: [value: InstanceSelectorOpenEvent]
 }>()
 
-const { subject, mode, store, diff } = defineProps({
+const { subject, mode, store, diff, scale } = defineProps({
     subject: {
         type: Object as () => NodeRepr,
         required: true
@@ -99,6 +99,10 @@ const { subject, mode, store, diff } = defineProps({
     diff: {
         type: Object as () => NodeLinkRepositoryDiff | null,
         default: null
+    },
+    scale: {
+        type: Number,
+        default: 1
     }
 })
 const editor_data = reactive({
@@ -123,8 +127,8 @@ const mouseUpNode = (event: MouseEvent) => {
 }
 const mouseMoveNode = (event: MouseEvent) => {
     if (editor_data.mouse_down) {
-        subject.x += event.clientX - editor_data.mouse_x
-        subject.y += event.clientY - editor_data.mouse_y
+        subject.x += (event.clientX - editor_data.mouse_x) / scale
+        subject.y += (event.clientY - editor_data.mouse_y) / scale
         editor_data.mouse_x = event.clientX
         editor_data.mouse_y = event.clientY
     }

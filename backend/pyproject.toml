@@ -38,7 +38,7 @@ dependencies = [
     "qdrant-client>=1.13.0",
     "sparqlwrapper>=2.0.0",
     "openai>=1.59.9",
-    # "onnxruntime-gpu",
+    # "onnxruntime-gpu",6
     # "fastembed-gpu",
     "line-profiler>=4.2.0",
     "json-repair>=0.46.0",

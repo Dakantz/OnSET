@@ -9,7 +9,7 @@
                 @link-point-clicked="emit('linkPointClicked', $event)"
                 @prop-point-clicked="emit('propPointClicked', $event)"
                 @instance-search-clicked="emit('instanceSearchClicked', $event)"
-                @type-point-clicked="emit('typePointClicked', $event)" />
+                @type-point-clicked="emit('typePointClicked', $event)" :scale="viewportState.scale" />
         </g>
         <g v-if="diff">
             <g v-for="link in diff.diff_links.removed">
@@ -19,13 +19,13 @@
                 <NodeComp :subject="node.left" :store="store" :mode="DisplayMode.SELECT" :diff="diff"
                     @link-point-clicked="emit('linkPointClicked', $event)"
                     @prop-point-clicked="emit('propPointClicked', $event)"
-                    @instance-search-clicked="emit('instanceSearchClicked', $event)" />
+                    @instance-search-clicked="emit('instanceSearchClicked', $event)" :scale="viewportState.scale" />
             </g>
         </g>
     </g>
 </template>
 <script setup lang="ts">
-import { defineProps, onMounted, reactive, useTemplateRef, watch } from 'vue'
+import { onMounted, reactive, useTemplateRef, watch } from 'vue'
 import { Link, SubjectNode } from '@/utils/sparql/representation';
 import NodeComp from './Node.vue';
 import LinkComp from './Link.vue';
@@ -34,6 +34,7 @@ import { DisplayMode, InstanceSelectorOpenEvent, SelectorOpenEvent } from '@/uti
 import type { PropertiesOpenEvent } from '@/utils/sparql/querymapper';
 import type { NodeLinkRepositoryDiff } from '@/utils/sparql/diff';
 import * as d3 from 'd3';
+import { ViewPortState } from '@/utils/editing';
 
 
 
@@ -46,7 +47,7 @@ const emit = defineEmits<{
     triggerInterface: [value: { trigger: () => void }]
 }>()
 
-const { store, diff, displayMode, simulate, rect } = defineProps({
+const { store, diff, displayMode, simulate, rect, viewportState } = defineProps({
     store: {
         type: Object as () => NodeLinkRepository,
         required: true
@@ -66,6 +67,10 @@ const { store, diff, displayMode, simulate, rect } = defineProps({
     rect: {
         type: Object as () => { x: number, y: number, width: number, height: number },
         default: () => ({ x: 0, y: 0, width: 1000, height: 500 })
+    },
+    viewportState: {
+        type: Object as () => ViewPortState,
+        default: () => new ViewPortState(1, { x: 0, y: 0 })
     }
 })
 

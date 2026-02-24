@@ -1,20 +1,30 @@
 <template>
     <div class="query_builder" ref="svg_wrapper">
         <svg class="query_build_wrapper">
-            <GraphView :store="store" :display-mode="DisplayMode.EDIT" :diff="diff"
-                @link-point-clicked="clickedOutlink($event)" @instance-search-clicked="clickedInstance($event)"
-                @type-point-clicked="clickedType($event)" @link-edit-clicked="clickedEditLink($event)"
-                :simulate="ui_state.run_simulation" @trigger-interface="ui_state.trigger_sim = $event.trigger"
-                :rect="ui_state.rect"></GraphView>
-            <LinkComposer :store="store" :evt="ui_state.attaching_event" @selection-complete="linkEditDone($event)">
-            </LinkComposer>
-            <OutLinkSelector :selection_event="ui_state.sublink_event" v-model="ui_state.sublink_display" :store="store"
-                @hover_option="previewLink($event)" @finished="linkSelectDone($event)">
-            </OutLinkSelector>
-            <InstanceSelector :selection_event="ui_state.instance_event" v-model="ui_state.instance_display">
-            </InstanceSelector>
-            <TypeSelector :selection_event="ui_state.type_event" v-model="ui_state.type_display" :store="store">
-            </TypeSelector>
+            <g>
+                <rect class="capture_rect" :width="ui_state.rect.width" :height="ui_state.rect.height"
+                    @wheel="scroll_box" @mousedown="startDrag($event)" @mousemove="drag($event)"
+                    @mouseup="endDrag($event)" @mouseleave="endDrag($event)">
+                </rect>
+            </g>
+            <g
+                :transform="`scale(${ui_state.viewportState.scale}) translate(${ui_state.viewportState.offset.x}, ${ui_state.viewportState.offset.y})`">
+                <GraphView :store="store" :display-mode="DisplayMode.EDIT" :diff="diff"
+                    @link-point-clicked="clickedOutlink($event)" @instance-search-clicked="clickedInstance($event)"
+                    @type-point-clicked="clickedType($event)" @link-edit-clicked="clickedEditLink($event)"
+                    :simulate="ui_state.run_simulation" @trigger-interface="ui_state.trigger_sim = $event.trigger"
+                    :rect="ui_state.rect" :viewport-state="ui_state.viewportState"></GraphView>
+                <LinkComposer :store="store" :evt="ui_state.attaching_event" @selection-complete="linkEditDone($event)"
+                    :viewport="ui_state.viewportState">
+                </LinkComposer>
+                <OutLinkSelector :selection_event="ui_state.sublink_event" v-model="ui_state.sublink_display"
+                    :store="store" @hover_option="previewLink($event)" @finished="linkSelectDone($event)">
+                </OutLinkSelector>
+                <InstanceSelector :selection_event="ui_state.instance_event" v-model="ui_state.instance_display">
+                </InstanceSelector>
+                <TypeSelector :selection_event="ui_state.type_event" v-model="ui_state.type_display" :store="store">
+                </TypeSelector>
+            </g>
             <use xlink:href="#outlink_selector"></use>
             <use xlink:href="#instance_selector"></use>
             <use xlink:href="#type_selector"></use>
@@ -26,7 +36,7 @@
     </div>
 </template>
 <script setup lang="ts">
-import { ref, watch, reactive, computed, onMounted, defineProps, onBeforeMount } from 'vue'
+import { ref, watch, reactive, computed, onMounted, onBeforeMount } from 'vue'
 import { SubjectNode, Link } from '@/utils/sparql/representation';
 import NodeComp from './elements/Node.vue';
 import OutLinkSelector from './elements/panels/LinkSelector.vue';
@@ -45,6 +55,8 @@ import TypeSelector from './elements/panels/TypeSelector.vue';
 import type { PropertiesOpenEvent } from '@/utils/sparql/querymapper';
 import LinkComposer from './elements/LinkComposer.vue';
 import type { SubjectInCircle } from '@/utils/three-man/CircleMan3D';
+import { ViewPortState } from '@/utils/editing';
+import { MOUSE } from 'three';
 
 const svg_wrapper = ref<HTMLElement | null>(null)
 
@@ -89,6 +101,12 @@ const ui_state = reactive({
         y: 0,
         width: 1000,
         height: 500
+    },
+    viewportState: new ViewPortState(1, { x: 0, y: 0 }),
+    viewDragState: {
+        dragging: false,
+        last: { x: 0, y: 0 },
+
     }
 })
 
@@ -146,6 +164,29 @@ const linkSelectDone = (evt: LinkEditEvent) => {
             store.removeNode(evt.node)
         }
     }
+}
+const scroll_box = (evt: WheelEvent) => {
+    console.log('scroll_box', evt)
+    ui_state.viewportState.scale *= 1 + evt.deltaY * -0.001
+    evt.preventDefault()
+}
+const startDrag = (evt: MouseEvent) => {
+    if (evt.button == MOUSE.MIDDLE) {
+        ui_state.viewDragState.dragging = true
+        ui_state.viewDragState.last = { x: evt.clientX, y: evt.clientY }
+    }
+}
+const drag = (evt: MouseEvent) => {
+    if (ui_state.viewDragState.dragging) {
+        const dx = evt.clientX - ui_state.viewDragState.last.x
+        const dy = evt.clientY - ui_state.viewDragState.last.y
+        ui_state.viewportState.offset.x += dx / ui_state.viewportState.scale
+        ui_state.viewportState.offset.y += dy / ui_state.viewportState.scale
+        ui_state.viewDragState.last = { x: evt.clientX, y: evt.clientY }
+    }
+}
+const endDrag = (evt: MouseEvent) => {
+    ui_state.viewDragState.dragging = false
 }
 
 const regenerateQuery = () => {
@@ -245,6 +286,13 @@ const previewLink = (l: Link | null) => {
 .query_build_wrapper {
     width: 100%;
     height: 100%;
+    cursor: move;
+}
+
+.capture_rect {
+    fill: transparent;
+    color: transparent;
+    pointer-events: all;
 }
 
 .node {

@@ -20,7 +20,7 @@
     </div>
 </template>
 <script setup lang="ts">
-import { ref, watch, reactive, onMounted, defineProps } from 'vue'
+import { ref, watch, reactive, onMounted } from 'vue'
 import { InstanceNodeLinkRepository, PropertiesOpenEvent, QueryMapper, ResultList } from '@/utils/sparql/querymapper';
 import { Vector2 } from 'three';
 import Loading from '../../ui/Loading.vue';
