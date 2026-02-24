@@ -3,8 +3,8 @@
         <svg class="query_build_wrapper">
             <g>
                 <rect class="capture_rect" :width="ui_state.rect.width" :height="ui_state.rect.height"
-                    @wheel="scroll_box" @mousedown="startDrag($event)" @mousemove="drag($event)"
-                    @mouseup="endDrag($event)" @mouseleave="endDrag($event)">
+                    @wheel="scroll_box" @mousedown.capture="startDrag($event)" @mousemove.capture="drag($event)"
+                    @mouseup.capture="endDrag($event)" @mouseleave.capture="endDrag($event)">
                 </rect>
             </g>
             <g
@@ -167,13 +167,25 @@ const linkSelectDone = (evt: LinkEditEvent) => {
 }
 const scroll_box = (evt: WheelEvent) => {
     console.log('scroll_box', evt)
+    let old_scale = ui_state.viewportState.scale
     ui_state.viewportState.scale *= 1 + evt.deltaY * -0.001
+    let diff_scale = ui_state.viewportState.scale - old_scale
+    // To keep the zoom centered on the mouse position, we need to adjust the offset based on the mouse position and the change in scale
+    const rect = svg_wrapper.value?.getBoundingClientRect()
+    if (rect) {
+        const mouse_x = evt.clientX - rect.left
+        const mouse_y = evt.clientY - rect.top
+        ui_state.viewportState.offset.x -= mouse_x * diff_scale / ui_state.viewportState.scale
+        ui_state.viewportState.offset.y -= mouse_y * diff_scale / ui_state.viewportState.scale
+    }
+
     evt.preventDefault()
 }
 const startDrag = (evt: MouseEvent) => {
     if (evt.button == MOUSE.MIDDLE) {
         ui_state.viewDragState.dragging = true
         ui_state.viewDragState.last = { x: evt.clientX, y: evt.clientY }
+        // evt.preventDefault()
     }
 }
 const drag = (evt: MouseEvent) => {
