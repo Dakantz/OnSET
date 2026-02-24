@@ -1,6 +1,6 @@
 FROM ubuntu:24.04 AS build-stage
 WORKDIR /conda
-RUN apt-get update && apt-get install -y  --no-install-recommends cmake build-essential wget ca-certificates git gcc g++ libssl-dev
+RUN apt-get update && apt-get install -y  --no-install-recommends cmake build-essential wget ca-certificates git gcc g++ libssl-dev libxml2-dev libxslt-dev python-dev
 
 RUN mkdir -p ./miniconda3
 RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ./miniconda3/miniconda.sh
