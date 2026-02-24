@@ -1,4 +1,4 @@
-FROM ubuntu:26.04 AS build-stage
+FROM ubuntu:24.04 AS build-stage
 WORKDIR /conda
 RUN apt-get update && apt-get install -y  --no-install-recommends cmake build-essential wget ca-certificates git gcc g++ libssl-dev libxml2-dev libxslt-dev libffi-dev
 
