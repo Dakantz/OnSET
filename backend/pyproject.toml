@@ -3,7 +3,7 @@ name = "onset-backend"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = "==3.12.8"
+requires-python = ">=3.14"
 dependencies = [
     "fastapi[standard]",
     "python-multipart",
@@ -27,7 +27,7 @@ dependencies = [
     "cachetools",
     "redis-om",
     "matplotlib",
-    "llvmlite>=0.44.0",
+    "llvmlite>=0.45.0",
     "llama-cpp-agent",
     "seqeval",
     "sparql-llm>=0.0.3",
