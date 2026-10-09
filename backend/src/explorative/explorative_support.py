@@ -1,15 +1,17 @@
 from __future__ import annotations
+from tkinter import Image
 from sentence_transformers import SentenceTransformer
 import torch
 from langchain_core.language_models import LLM
 from llama_cpp import Llama
 from hashlib import sha256
 import regex as re
-from sqlalchemy import text, inspect, create_engine, select, delete, or_
+from sqlalchemy import create_engine, select, delete, or_
 from sqlalchemy.orm import Session
 from tqdm import tqdm
 import pandas as pd
 
+from explorative.data_tensor import DataTensor
 from model import SubjectLink
 from ontology import OntologyManager
 
@@ -50,6 +52,7 @@ class GuidanceManager:
                 device = "cpu"
         print("Using device", device)
         self.device = device
+        self._encoding_model = None
         # This model supports two prompts: "s2p_query" and "s2s_query" for sentence-to-passage and sentence-to-sentence tasks, respectively.
         # They are defined in `config_sentence_transformers.json`
         self.query_prompt_name = "s2p_query"
@@ -138,6 +141,7 @@ class GuidanceManager:
                     subjects_ids=[s.subject_id for s in topic.subjects],
                     property_ids=[l.property_id for l in topic.links],
                 )
+
             if root_topic is None:
                 raise ValueError("No root topic found")
             return topic_tree(root_topic[0])
@@ -343,3 +347,19 @@ class GuidanceManager:
                 for s in results
             ]
             return FuzzyQueryResults(results=results)
+
+    @property
+    def encoding_model(self):
+        if self._encoding_model is None:
+            self._encoding_model = SentenceTransformer(self.oman.config.encoding_model)
+        return self._encoding_model
+
+    def encode(self, text: str | None = None, image: Image | None = None):
+        assert text is not None or image is not None, (
+            "Either text or image must be provided"
+        )
+        out = self.encoding_model.encode(
+            [text if text is not None else image], convert_to_numpy=True
+        )[0]
+        dt = DataTensor.from_numpy(out)
+        return dt

@@ -105,7 +105,7 @@ class TopicInitator:
         topic_model_llm.fit(docs["doc"])
         topic_ids = np.array(topic_model_llm.topics_)
         probs = np.array(topic_model_llm.probabilities_)
-        topic_ids[topic_ids == -1] = np.argmax(probs[topic_ids == -1], axis=1) 
+        topic_ids[topic_ids == -1] = np.argmax(probs[topic_ids == -1], axis=1)
         topic_model_llm.update_topics(docs["doc"], topics=topic_ids.tolist())
         try:
 
@@ -243,7 +243,7 @@ class TopicInitator:
             ]
             session.commit()
 
-    def embed_property(self, p: Subject, cls: Subject) -> SubjectLinkDB:
+    def embed_property(self, p: Subject, cls: Subject):
         prop_ranges = self.guidance_man.oman.range_of(p.subject_id)
         subject_links: list[SubjectLinkDB] = []
         for prop_range in prop_ranges:
@@ -298,24 +298,25 @@ class TopicInitator:
             session.execute(text("SET CONSTRAINTS ALL DEFERRED"))
             session.execute(text("SET session_replication_role = replica"))
 
-            anonymous_props = self.guidance_man.oman.open_properties()
-            thing = self.guidance_man.oman.enrich_subject("owl:Thing")
-
-            for i, prop in enumerate(
-                tqdm(anonymous_props, desc="Saving anonymous properties")
-            ):
+            anonymous_props = list(set(self.guidance_man.oman.open_properties()))
+            thing = self.guidance_man.oman.enrich_subject(
+                "owl:Thing", load_properties=True
+            )
+            gen = tqdm(anonymous_props, desc="Saving anonymous properties")
+            for i, prop in enumerate(gen):
+                # gen.set_postfix_str(f"Saving anonymous property {prop}")
                 enriched_prop = self.guidance_man.oman.enrich_subject(prop)
                 subject_links = self.embed_property(enriched_prop, thing)
+                gen.set_postfix_str(f"Saving {len(subject_links)} links for {prop}")
                 session.add_all(subject_links)
-                if i % 1000 == 0:
+                if i % 100 == 0:
                     session.commit()
+            all_classes = list(self.all_classes.values()) + [thing]
 
-            session.commit()
-            all_class_ids = [self.all_classes[c].subject_id for c in self.all_classes]
             cls_descs: dict[str, str] = {}
             named_individuals_ids = {}
 
-            cls_it = tqdm(self.all_classes.values(), desc="Saving classes")
+            cls_it = tqdm(all_classes, desc="Saving classes")
             for cls in cls_it:
                 comment = (
                     cls.spos["rdfs:comment"].first_value()
@@ -401,17 +402,12 @@ class TopicInitator:
                 #     )
                 #     session.add(named_individuals_ids[ne.subject_id])
                 #     session.commit()
-
-            session.commit()
-
-            for cls in tqdm(self.all_classes.values(), desc="Saving relations"):
+            for cls in tqdm(all_classes, desc="Saving relations"):
                 for prop in cls.properties.keys():
                     for p in cls.properties[prop]:
                         subject_links = self.embed_property(p, cls)
                         session.add_all(subject_links)
                         # print(f"Class {to_id} does not exist, skipping")
-            session.commit()
-
             all_links = session.query(SubjectLinkDB).yield_per(100).all()
             for i, link in enumerate(tqdm(all_links, desc="Fixing props links")):
                 if link.to_id is not None:
@@ -426,8 +422,6 @@ class TopicInitator:
 
                 if i % 1000 == 0:
                     session.commit()
-
-            session.commit()
 
             # now do the embeddings in batches
 

@@ -1,33 +1,22 @@
 from hashlib import sha512
 from ontology import OntologyManager
-import regex as re
 import pandas as pd
 import numpy as np
 from sentence_transformers import SentenceTransformer
 from glob import glob
 from sklearn.feature_extraction.text import TfidfVectorizer
 import tqdm
-from typing import List
-from typing import Optional
-from sqlalchemy import ForeignKey, String, create_engine, select
+from PIL.Image import Image
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import (
-    DeclarativeBase,
-    Mapped,
-    mapped_column,
-    relationship,
     Session,
     lazyload,
 )
-from dataclasses import dataclass
 
 from model import (
     Base,
-    BaseModel,
     Subject,
-    Property,
-    PropertyValue,
     MatchDB,
-    Match,
     PathElementDB,
     RelationsFoundDB,
     RelationsFound,

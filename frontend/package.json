@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "build-only": "vite build",
     "type-check": "vue-tsc --build --force",
-    "generate-client": "sta generate -p http://localhost:8000/openapi.json -o ./src/api/client.ts --axios",
+    "generate-client": "sta generate -p http://localhost:8123/openapi.json -o ./src/api/client.ts --axios",
     "generate-client-mac": "sta generate -p http://localhost:8001/openapi.json -o ./src/api/client.ts --axios"
   },
   "dependencies": {
@@ -21,6 +21,7 @@
     "chartjs-adapter-date-fns": "^3.0.0",
     "d3": "^7.9.0",
     "date-fns": "^4.1.0",
+    "diff": "^9.0.0",
     "file-saver": "^2.0.5",
     "flatted": "^3.3.2",
     "pinia": "^2.2.4",

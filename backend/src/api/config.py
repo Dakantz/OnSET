@@ -39,7 +39,7 @@ onto_path = f"{base_path}/hero-ontology/hereditary_clinical.ttl"
 
 
 class ManMan:
-    def __init__(self, config_name: str = "dbpedia", idx: int = -2):
+    def __init__(self, config_name: str = "dbpedia", idx: int = -1):
         self.db_config = None
         self.config_name = config_name
         self.idx = idx
@@ -82,7 +82,8 @@ class ManMan:
         self.graph = Graph(store=self.store)
 
         self.config = OntologyConfig()
-
+        self.config.encoding_model = db_config.encoding_model
+        self.config.ontology_extension = db_config.ontology_extension
         self.ontology_manager = OntologyManager(self.config, self.graph)
         self.dataset_manager = DatasetManager(self.ontology_manager)
         # dataset_manager.initialise(glob_path="data/datasets/ALS/**/*.csv")

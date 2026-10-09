@@ -7,11 +7,11 @@ sys.path.append(os.path.abspath(""))
 
 from rdflib.plugins.stores.sparqlstore import SPARQLStore
 
-from backend.ontology import OntologyManager, OntologyConfig, Graph
-from backend.datasetmatcher import DatasetManager
-from backend.explorative.explorative_support import GuidanceManager
-from backend.explorative.topic_init import TopicInitator
-from backend.explorative.llm_query import (
+from ontology import OntologyManager, OntologyConfig, Graph
+from datasetmatcher import DatasetManager
+from explorative.explorative_support import GuidanceManager
+from explorative.topic_init import TopicInitator
+from explorative.llm_query import (
     EnrichedEntitiesRelations,
     LLMQuery,
     QueryProgress,
@@ -21,7 +21,7 @@ from tqdm import tqdm
 import pandas as pd
 
 # %%
-from backend.eval_config import (
+from eval_config import (
     DBPEDIA_CONFIGS,
     OMA_CONFIGS,
     UNIPROT_CONFIGS,
@@ -74,6 +74,8 @@ if __name__ == "__main__":
     graph = Graph(store=store)
 
     config = OntologyConfig()
+    config.ontology_extension = setup.ontology_extension
+    config.encoding_model = setup.encoding_model
 
     ontology_manager = OntologyManager(config, graph)
     dataset_manager = DatasetManager(ontology_manager)

@@ -30,7 +30,7 @@
 import { Api, type FuzzyQueryResult } from '@/api/client.ts/Api';
 import { BACKEND_URL } from '@/utils/config';
 import {  SubjectNode, type FuzzyQueryRequest } from '@/utils/sparql/representation';
-import { ref, watch, reactive, defineEmits } from 'vue';
+import { ref, watch, reactive } from 'vue';
 import NodeComp from './elements/Node.vue';
 import OnsetBtn from '@/components/ui/OnsetBtn.vue';
 import { LINK_WIDTH, NODE_HEIGHT, NODE_WIDTH } from '@/utils/sparql/helpers';

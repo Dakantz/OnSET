@@ -25,21 +25,35 @@ export enum SubQueryType {
     BOOLEAN = "boolean",
     DATE = "date",
     SUBJECT = "subject",
-    QUERY_PROP = "query_prop"
+    QUERY_PROP = "query_prop",
+
+    VECTOR_SORT = "vector_sort"
 }
 
 @registerClass
 export class SubQuery implements Diffable {
     link: Link;
-    height: number
-    width: number
+    private _height: number;
+    private _width: number;
     constraint_type: SubQueryType;
     id: string | number;
     static id_counter: number = 0;
     constructor() {
-        this.height = CONSTRAINT_HEIGHT / 2
-        this.width = CONSTRAINT_WIDTH
+        this._width = CONSTRAINT_WIDTH
+        this._height = CONSTRAINT_HEIGHT/2
         this.id = SubQuery.id_counter++
+    }
+    get height(): number {
+        return this._height
+    }
+    set height(value: number) {
+        this._height = value
+    }
+    get width(): number {
+        return this._width
+    }
+    set width(value: number) {
+        this._width = value
     }
     changed(other: Diffable): boolean {
         const testvar = "?test"
@@ -53,7 +67,6 @@ export class SubQuery implements Diffable {
     }
     static construct(link: Link): SubQuery {
         let constraint = null
-
         if (StringConstraint.validPropType(link.to_proptype)) {
             constraint = new StringConstraint("", StringConstraintType.CONTAINS);
         } else if (NumberConstraint.validPropType(link.to_proptype)) {
@@ -62,6 +75,8 @@ export class SubQuery implements Diffable {
             constraint = new BooleanConstraint(true);
         } else if (DateConstraint.validPropType(link.to_proptype)) {
             constraint = new DateConstraint(new Date(), NumberConstraintType.GREATER);
+        } else if (VectorSort.validPropType(link.to_proptype)) {
+            constraint = new VectorSort(VectorSortModality.IMAGE, VectorSortDirection.DESCENDING, VectorSortDistance.COSINE);
         }
         if (constraint) {
             constraint.link = link;
@@ -72,7 +87,10 @@ export class SubQuery implements Diffable {
         return ""
     }
     expression(property: string): string {
-        return this.filterExpression(property);
+        return `FILTER(${this.filterExpression(property)})`;
+    }
+    postQueryExpression(property: string): string {
+        return "";
     }
 }
 
@@ -82,6 +100,9 @@ export class QueryProp extends SubQuery {
     constructor() {
         super();
         this.constraint_type = SubQueryType.QUERY_PROP
+    }
+    get height(): number {
+        return CONSTRAINT_HEIGHT / 2
     }
     static construct(link: Link): QueryProp {
         let query_prop = new QueryProp();
@@ -262,11 +283,141 @@ export class DateConstraint extends SubQuery {
         return propType == 'xsd:date'
     }
 }
+
+export enum VectorSortModality {
+    IMAGE = "image",
+    TEXT = "text",
+}
+export enum VectorSortDirection {
+    ASCENDING = "ascending",
+    DESCENDING = "descending",
+}
+export enum VectorSortDistance {
+    COSINE = "cosine",
+    EUCLIDEAN = "euclidean",
+    MANHATTAN = "manhattan",
+}
+@registerClass
+export class VectorData {
+    data: number[];
+    type: string;
+    shape: number[];
+    static propType: string = "<https://w3id.org/rdf-tensor/datatypes#NumericDataTensor>"
+    constructor(data: number[] = [], type: string = "float32", shape: number[] = []) {
+        this.data = data;
+        this.type = type;
+        this.shape = shape.length > 0 ? shape : [data.length];
+
+    }
+    toString(): string {
+        let json_str = JSON.stringify({
+            "type": this.type,
+            "shape": this.shape,
+            "data": this.data,
+        })
+        json_str = json_str.replace(/"/g, '\\"')
+        return `"${json_str}"^^${VectorData.propType}`
+    }
+
+}
+@registerClass
+export class VectorSort extends SubQuery {
+    modality: VectorSortModality;
+    direction: VectorSortDirection;
+    distance: VectorSortDistance;
+    vector: number[] | null = null;
+
+    input_state: {
+        image: string | null;
+        text: string | null;
+    } = {
+            image: null,
+            text: null,
+        }
+    constructor(modality: VectorSortModality = VectorSortModality.IMAGE, direction: VectorSortDirection = VectorSortDirection.DESCENDING, distance: VectorSortDistance = VectorSortDistance.COSINE) {
+        super();
+        this.modality = modality;
+        this.direction = direction;
+        this.distance = distance;
+        this.constraint_type = SubQueryType.VECTOR_SORT
+    }
+    set height(value: number) {
+        // no-op, height is determined by modality
+    }
+    get height(): number {
+        switch (this.modality) {
+            case VectorSortModality.IMAGE:
+                return CONSTRAINT_HEIGHT * 4
+            case VectorSortModality.TEXT:
+                return CONSTRAINT_HEIGHT * 1
+        }
+    }
+
+    async reloadVectorFromState(api: Api<any>) {
+        this.vector = null
+        let vector_resp = null
+        switch (this.modality) {
+            case VectorSortModality.TEXT:
+                if (this.input_state.text && this.input_state.text.length > 0) {
+                    vector_resp = await api.classes.encodeTextClassesSearchEncodeTextPost(this.input_state.text)
+                }
+                break
+            case VectorSortModality.IMAGE:
+                if (this.input_state.image) {
+                    vector_resp = await api.classes.encodeImageClassesSearchEncodeImagePost(this.input_state.image)
+                }
+                break
+        }
+        this.vector = vector_resp.data.data
+    }
+    expression(property: string): string {
+        let distance_func = ""
+        switch (this.distance) {
+            case VectorSortDistance.COSINE:
+                distance_func = "dtf:cosineSimilarity"
+                break;
+            case VectorSortDistance.EUCLIDEAN:
+                distance_func = "dtf:euclideanDistance"
+                break;
+            case VectorSortDistance.MANHATTAN:
+                distance_func = "dtf:manhattanDistance"
+                break;
+        }
+        return `BIND(${distance_func}(${property}, ${this.vectorExpression()}) AS ?sim_${toVar(this.id)})`
+    }
+    postQueryExpression(property: string): string {
+        let order_dir = this.direction == VectorSortDirection.ASCENDING ? "ASC" : "DESC"
+        return `ORDER BY ${order_dir}(?sim_${toVar(this.id)})`
+    }
+    static validPropType(propType: string): boolean {
+        // console.log("Checking if propType is valid for vector sort", propType, VectorData.propType)
+        return propType == VectorData.propType
+    }
+    vectorExpression(): string {
+        if (!this.vector) {
+            return ""
+        } else {
+            return new VectorData(this.vector).toString()
+        }
+
+    }
+}
+
+
+
+export enum LinkType {
+    STRUCTURAL = "structural",
+    SIMILARITY = "similarity",
+}
 @registerClass
 export class LinkTriplet {
     from_id: string;
     link_id: string;
     to_id: string;
+    semantic_link_type: LinkType;
+    constructor(link_type: LinkType = LinkType.STRUCTURAL) {
+        this.semantic_link_type = link_type;
+    }
 }
 @registerClass
 export class QuerySet {
@@ -463,6 +614,8 @@ export class Link<N extends Subject = Subject> implements SubjectLink, Diffable 
     to_id: string;
     to_proptype: string | null;
     property_id: string | null;
+
+    semantic_link_type: LinkType = LinkType.STRUCTURAL;
 
     allow_arbitrary: boolean = false;
     quantifier: LinkQuantifier | null = null;

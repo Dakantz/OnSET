@@ -1,8 +1,9 @@
 import type { FuzzyQueryResult, QueryGraph, Subject } from "@/api/client.ts/Api";
 import { jsonClone, registerClass } from "../parsing";
 import { OpenEventType } from "./helpers";
-import { Link, QueryProp, QuerySet, SubjectConstraint, SubjectNode, SubQuery, type QuerySetGenerator } from "./representation";
+import { Link, LinkType, QueryProp, QuerySet, SubjectConstraint, SubjectNode, SubQuery, type QuerySetGenerator } from "./representation";
 import type { Diffable } from "./diff";
+import { el } from "vuetify/locale";
 
 
 @registerClass
@@ -205,10 +206,32 @@ export class NodeLinkRepository<N extends SubjectNode = SubjectNode, L extends L
     generateQuery(limit: number | null = 100, skip: number | null = null, distinct: boolean = true): string {
         let set = this.querySet()
         let output_names = Object.values(set.nodes).map(nd => nd.outputId())
-        let query = `SELECT ${distinct ? "DISTINCT" : ""} ${output_names.join(" ")} ${set.output_ids.join(" ")} WHERE {`
+        let query = `
+        PREFIX tensorIndex: <https://qlever.cs.uni-freiburg.de/tensorIndex/>
+        PREFIX dtf: <https://w3id.org/rdf-tensor/functions#>
+        SELECT ${distinct ? "DISTINCT" : ""} ${output_names.join(" ")} ${set.output_ids.join(" ")} WHERE {`
 
         for (let link of set.link_triplets) {
-            query += `\n${link.from_id} ${link.link_id} ${link.to_id}.`
+            if (link.semantic_link_type === LinkType.STRUCTURAL) {
+                query += `\n${link.from_id} ${link.link_id} ${link.to_id}.`
+            } else if (link.semantic_link_type === LinkType.SIMILARITY) {
+                query += `\n${link.from_id} ${link.link_id} ${link.from_id}_emb.
+                 SERVICE tensorIndex: {
+                    _:config tensorIndex:numNN 1 ;
+                    tensorIndex:left ${link.from_id}_emb ;
+                    tensorIndex:bindDistance ?dist ;
+                    tensorIndex:payload ?s, ?thumb_ship_emb ;
+                    tensorIndex:searchK 1 ;
+                    tensorIndex:kIVF 512 ;
+                    tensorIndex:experimentalRightCacheName "${link.from_id}-${link.to_id}" ;
+                    tensorIndex:right ?${link.to_id}_emb ;
+                    tensorIndex:algorithm tensorIndex:ivf ;
+                    tensorIndex:distance tensorIndex:dot .
+                    {
+                        ${link.to_id} ${link.link_id} ${link.to_id}_emb ;
+                    }
+                }`
+            }
         }
 
         for (let node of Object.values(set.nodes)) {
@@ -231,11 +254,16 @@ export class NodeLinkRepository<N extends SubjectNode = SubjectNode, L extends L
                 query += `\n${from.outputId()} ${constraint.link.property_id} ${constrained_id}.`
             } else {
                 query += `\n${from.outputId()} ${constraint.link.property_id} ${constrained_id}.
-        FILTER(${constraint.expression(constrained_id)})`
+                ${constraint.expression(constrained_id)}`
             }
         }
         query += "\n}"
-        query += "\nORDER BY " + set.output_ids.join(" ")
+        const post_query_expressions = set.filter.map((constraint) => constraint.postQueryExpression(constraint.propVar())).filter(expr => expr.length > 0)
+        if (post_query_expressions.length > 0) {
+            query += "\n" + post_query_expressions.join("\n")
+        } else {
+            query += "\nORDER BY " + set.output_ids.join(" ")
+        }
         if (limit) {
             query += `\nLIMIT ${limit}`
         }
@@ -286,7 +314,8 @@ export class NodeLinkRepository<N extends SubjectNode = SubjectNode, L extends L
             set.link_triplets.push({
                 from_id: from.outputId(),
                 link_id: link_id,
-                to_id: to.outputId()
+                to_id: to.outputId(),
+                semantic_link_type: link.semantic_link_type
             })
         }
         return set

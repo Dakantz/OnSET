@@ -17,30 +17,48 @@ class EvalConfig(BaseModel):
     selection_distribution: SelectionDistribution = SelectionDistribution.INSTANCES
     model_quant: str = "*.Q8_0.gguf"
     redis_cache_url: str = "redis://localhost:6379/1"
+    ontology_extension: str = ""
+    encoding_model: str = "clip-ViT-B-32"
 
 
+DBPEDIA_ONTOLOGY_EXTENSION = """
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix dbo: <http://dbpedia.org/ontology/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+dbo:thumbnail_embedding	rdf:type	owl:FunctionalProperty ,
+		owl:DatatypeProperty .
+dbo:thumbnail_embedding	rdfs:label	"thumbnail embedding"@en ;
+    	rdfs:domain	owl:Thing ;
+        rdfs:range	<https://w3id.org/rdf-tensor/datatypes#NumericDataTensor> ."""
 DBPEDIA_CONFIGS = [
     EvalConfig(
         model_id="bartowski/Mistral-Small-Instruct-2409-GGUF",
         model_quant="*-Q6_K.gguf",
         name="DBpedia Mistral",
+        ontology_extension=DBPEDIA_ONTOLOGY_EXTENSION,
     ),
     EvalConfig(
         model_id="bartowski/Qwen2.5-Coder-32B-Instruct-GGUF",
         model_quant="*-Q4_K_L.gguf",
         name="DBpedia Qwen2.5 Coder 32B",
+        ontology_extension=DBPEDIA_ONTOLOGY_EXTENSION,
     ),
     EvalConfig(
         model_id="bartowski/Qwen2.5-32B-Instruct-GGUF",
         model_quant="*-Q4_K_L.gguf",
         name="DBpedia Qwen2.5 Coder 32B",
+        ontology_extension=DBPEDIA_ONTOLOGY_EXTENSION,
     ),
     EvalConfig(
         model_id="NousResearch/Hermes-3-Llama-3.1-8B-GGUF",
         name="DBpedia large",
+        ontology_extension=DBPEDIA_ONTOLOGY_EXTENSION,
     ),
     EvalConfig(
         model_id="NousResearch/Hermes-3-Llama-3.2-3B-GGUF",
+        ontology_extension=DBPEDIA_ONTOLOGY_EXTENSION,
     ),
 ]
 OMA_CONFIGS = [
@@ -166,7 +184,6 @@ BTO_CONFIGS = [
     ),
 ]
 DNB_CONFIGS = [
-    
     EvalConfig(
         model_id="bartowski/Mistral-Small-Instruct-2409-GGUF",
         model_quant="*-Q6_K.gguf",
@@ -245,7 +262,6 @@ YAGO_CONFIGS = [
         name="Yago",
         selection_distribution=SelectionDistribution.INSTANCES,
     ),
-    
 ]
 GUTBRAINIE_CONFIGS = [
     EvalConfig(
@@ -271,7 +287,7 @@ GUTBRAINIE_CONFIGS = [
         selection_distribution=SelectionDistribution.UNIFORM,
     ),
 ]
-DBLP_CONFIGS=[
+DBLP_CONFIGS = [
     EvalConfig(
         model_id="NousResearch/Hermes-3-Llama-3.2-3B-GGUF",
         conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-dblp",
@@ -281,9 +297,9 @@ DBLP_CONFIGS=[
     ),
 ]
 
-ALL_CONFIG_MAP={
+ALL_CONFIG_MAP = {
     "dbpedia": DBPEDIA_CONFIGS,
-    "oma": OMA_CONFIGS, 
+    "oma": OMA_CONFIGS,
     "uniprot": UNIPROT_CONFIGS,
     "bto": BTO_CONFIGS,
     "dnb": DNB_CONFIGS,

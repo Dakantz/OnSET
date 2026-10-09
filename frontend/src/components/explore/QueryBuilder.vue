@@ -18,7 +18,7 @@
                     :viewport="ui_state.viewportState">
                 </LinkComposer>
                 <OutLinkSelector :selection_event="ui_state.sublink_event" v-model="ui_state.sublink_display"
-                    :store="store" @hover_option="previewLink($event)" @finished="linkSelectDone($event)">
+                    :store="store" @hover_option="ui_state.hoveredLink = $event" @finished="linkSelectDone($event)">
                 </OutLinkSelector>
                 <InstanceSelector :selection_event="ui_state.instance_event" v-model="ui_state.instance_display">
                 </InstanceSelector>
@@ -29,10 +29,8 @@
             <use xlink:href="#instance_selector"></use>
             <use xlink:href="#type_selector"></use>
         </svg>
-        <div id="threed_minimap">
-            <Loading v-if="ui_state.loading"></Loading>
-            <div id="threed_graph"></div>
-        </div>
+        <!-- <OverviewBox :store="store" :query_string="ui_state.query_string" :hoveredLink="ui_state.hoveredLink">
+        </OverviewBox> -->
     </div>
 </template>
 <script setup lang="ts">
@@ -40,6 +38,7 @@ import { ref, watch, reactive, computed, onMounted, onBeforeMount } from 'vue'
 import { SubjectNode, Link } from '@/utils/sparql/representation';
 import NodeComp from './elements/Node.vue';
 import OutLinkSelector from './elements/panels/LinkSelector.vue';
+import OverviewBox from './elements/OverviewBox.vue';
 import { DisplayMode, InstanceSelectorOpenEvent, LinkEditEvent, OpenEventType, type SelectorOpenEvent } from '@/utils/sparql/helpers';
 import InstanceSelector from './elements/panels/InstanceSelector.vue';
 import { RepositoryState, type MixedResponse, type NodeLinkRepository } from '@/utils/sparql/store';
@@ -49,7 +48,7 @@ import { fa } from 'vuetify/locale';
 import { Api } from '@/api/client.ts/Api';
 import { BACKEND_URL } from '@/utils/config';
 // import type { SubjectInCircle } from '@/utils/d3-man/CircleMan';
-import Loading from '../ui/Loading.vue';
+
 import type { NodeLinkRepositoryDiff } from '@/utils/sparql/diff';
 import TypeSelector from './elements/panels/TypeSelector.vue';
 import type { PropertiesOpenEvent } from '@/utils/sparql/querymapper';
@@ -83,6 +82,7 @@ enum EditorMode {
     CREATE_LINK = 'create_link',
 }
 const ui_state = reactive({
+    hoveredLink: null as Link | null,
     sublink_display: false,
     sublink_event: null as SelectorOpenEvent,
     attaching_display: false,
@@ -91,7 +91,6 @@ const ui_state = reactive({
     instance_event: null as InstanceSelectorOpenEvent,
     type_display: false,
     type_event: null as SelectorOpenEvent,
-    loading: false,
     run_simulation: false,
     query_string: '',
     editor_mode: EditorMode.EDIT,
@@ -109,8 +108,6 @@ const ui_state = reactive({
 
     }
 })
-
-const overviewBox = new OverviewCircles('#threed_graph')
 
 const clickedOutlink = (evt: SelectorOpenEvent) => {
     if (evt.side == OpenEventType.PROP) {
@@ -230,43 +227,8 @@ watch(() => store, () => {
         ui_state.trigger_sim()
     }
 }, { deep: false, flush: 'post' })
-watch(() => ui_state.query_string, (new_val) => {
-    if (overviewBox.nodes.length == 0 && overviewBox.renderer) {
-        return
-    }
-
-    overviewBox.updateLinks(store)
-}, { deep: false })
 
 onMounted(() => {
-    // circleman.clicked_node = (node: NodeType) => {
-    //     console.log('clicked_node', node)
-    //     api.classes.getLinksClassesLinksGet({
-    //         subject_id: node.subject_id
-    //     }).then(resp => {
-    //         console.log('resp', resp)
-    //         circleman.removeLinks()
-    //         const links = resp.data
-    //         for (const out of links.targets) {
-    //             circleman.addLink(links.source.subject_id, out.target.subject_id, out.count)
-    //         }
-    //     }).catch(console.error)
-    // }
-
-    (async () => {
-        ui_state.loading = true
-        const resp_classes = await api.classes.getFullClassesClassesFullGet()
-        ui_state.loading = false
-        overviewBox.nodes = resp_classes.data as SubjectInCircle[]
-        // overviewBox.dimensions.width = 1000
-        overviewBox.initPackedCircles()
-        if (store && store.nodes.length > 0) {
-            overviewBox.updateLinks(store)
-        }
-    })().catch((e) => {
-        console.error(e)
-        ui_state.loading = false
-    })
     let svg_g_rect = svg_wrapper.value?.getBoundingClientRect()
     if (svg_g_rect) {
         ui_state.rect.x = svg_g_rect.x
@@ -279,14 +241,6 @@ onMounted(() => {
 })
 
 
-const previewLink = (l: Link | null) => {
-    // console.log('Preview link', l)
-    if (l) {
-        overviewBox.previewLink(l)
-    } else {
-        overviewBox.hidePreview()
-    }
-}
 
 </script>
 <style lang="scss" scoped>
@@ -320,24 +274,4 @@ const previewLink = (l: Link | null) => {
     text-anchor: middle;
 }
 
-
-#threed_graph {
-    width: 100%;
-    height: 100%;
-}
-
-#threed_minimap {
-    aspect-ratio: 1;
-    height: 15vw;
-    width: 15vw;
-    position: relative;
-    left: calc(100% - 15vw - 20px);
-    bottom: calc(15vw + 20px);
-    // translate: calc(100%) calc(80%);
-    z-index: 20;
-    background-color: #ffffff;
-    border: 1px solid #8fa88f;
-    padding: 4px;
-    margin: 5px;
-}
 </style>

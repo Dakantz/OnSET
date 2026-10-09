@@ -13,6 +13,7 @@ import pandas as pd
 from rdflib.plugins.sparql import prepareQuery
 from tqdm import tqdm
 import traceback
+from rdflib.plugins.parsers.notation3 import BadSyntax
 
 
 class Prefix(BaseModel):
@@ -63,6 +64,15 @@ class OntologyConfig(BaseModel):
     language: str = Field(
         "en", title="Language", description="Language of the ontology"
     )
+    encoding_model: str = Field(
+        "clip-ViT-B-32",
+        title="Encoding Model",
+        description="Model to be used for encoding",
+    )
+    ontology_extension: str = Field(
+        """
+        """
+    )
 
 
 INT_COMPATIBLE_TYPES = [
@@ -82,11 +92,34 @@ FLOAT_COMPATIBLE_TYPES = [
 class OntologyManager:
     def __init__(self, config: OntologyConfig, brainteaser_graph: Graph):
         self.config = config
-        self.onto = brainteaser_graph  # TODO enable dynamic loading
+        self.onto = brainteaser_graph
+        self.addtional_graph: Graph | None = None
+        if len(config.ontology_extension.strip()) > 0:
+            try:
+                self.addtional_graph = Graph()
+                self.addtional_graph.parse(
+                    data=config.ontology_extension, format="turtle"
+                )
+            except BadSyntax as bse:
+                print(f"Error parsing ontology additions: {bse}")
+                raise bse
         self.__label_cache: dict[str, str] = {}
 
+    def __query(self, q: str):
+        res = list(self.onto.query(q))
+        if self.addtional_graph is not None:
+            add_res = list(self.addtional_graph.query(q))
+            res.extend(add_res)
+        return res
+
+    def __queries_res_raw(self, q: str):
+        res = [self.onto.query(q)]
+        if self.addtional_graph is not None:
+            res.extend(self.addtional_graph.query(q))
+        return res
+
     def q_to_df(self, q: str):
-        results = list(self.onto.query(q))
+        results = list(self.__query(q))
         # for r in results:
         #     for t in r:
         #         if isinstance(t, URIRef):
@@ -99,9 +132,12 @@ class OntologyManager:
         return pd.DataFrame(results)
 
     def q_to_df_values(self, q: str) -> pd.DataFrame:
-        result_set = self.onto.query(q)
-        cols = [str(var) for var in result_set.vars]
-        results = [dict(zip(cols, row)) for row in result_set]
+        result_sets = self.__queries_res_raw(q)
+        assert len(result_sets) > 0, "Expected non-empty result set"
+        cols = [str(var) for var in result_sets[0].vars]
+        results = [
+            dict(zip(cols, row)) for result_set in result_sets for row in result_set
+        ]
         results_df = pd.DataFrame(results)
         results_df = results_df.map(self.to_readable)
         return results_df
@@ -111,9 +147,7 @@ class OntologyManager:
         for i, row in df.iterrows():
             for j, col in row.items():
                 data = list(
-                    self.onto.query(
-                        f"SELECT ?label WHERE {{ {col} rdfs:label ?label }}"
-                    )
+                    self.__query(f"SELECT ?label WHERE {{ {col} rdfs:label ?label }}")
                 )
                 labeled_df.at[i, j] = data[0][0] if data else col
         return labeled_df
@@ -149,7 +183,7 @@ class OntologyManager:
         #     },
         # )
         classes = list(
-            self.onto.query(
+            self.__query(
                 self.config.sub_class_query.replace("?cls", cls),
             )
         )
@@ -167,7 +201,7 @@ class OntologyManager:
                     }}
                     """
         classes = list(
-            self.onto.query(
+            self.__query(
                 query,
             )
         )
@@ -185,7 +219,7 @@ class OntologyManager:
                     LIMIT {limit}
                     """
         individuals = list(
-            self.onto.query(
+            self.__query(
                 query,
                 # initBindings={"cls": cls},
             )
@@ -293,7 +327,7 @@ class OntologyManager:
             # print("Loading outgoing edges for", cls, edges)
             if edges and len(edges) > 0:
                 outgoing_edges = list(
-                    self.onto.query(
+                    self.__query(
                         f"""
                     SELECT DISTINCT ?edge ?edge_lbl ?obj ?obj_lbl WHERE {{ {cls} ?edge ?obj. FILTER (?edge in ({", ".join(edges)})) 
 OPTIONAL {{?edge rdfs:label ?edge_label.}}
@@ -305,7 +339,7 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
                 )
             else:
                 outgoing_edges = list(
-                    self.onto.query(
+                    self.__query(
                         f"""
                     SELECT DISTINCT ?edge ?edge_lbl ?obj ?obj_lbl WHERE {{ {cls} ?edge ?obj. 
 OPTIONAL {{?edge rdfs:label ?edge_label.}}
@@ -359,7 +393,7 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
     def refcount(self, cls):
         try:
             refcount = list(
-                self.onto.query(
+                self.__query(
                     f"""
                 SELECT (COUNT(?s) as ?count) WHERE {{ ?s ?p {cls}. }}"""
                 )
@@ -378,7 +412,7 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
         try:
             # print("Loading properties for", cls)
             properties = list(
-                self.onto.query(
+                self.__query(
                     f"""
                 SELECT DISTINCT ?prop WHERE {{ 
                 ?prop rdf:type {property_type}.
@@ -403,7 +437,7 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
         try:
             # print("Loading properties for", cls)
             ranges = list(
-                self.onto.query(
+                self.__query(
                     f"""
                 SELECT DISTINCT ?range WHERE {{ 
                 {prop} rdfs:range/(owl:unionOf/rdf:rest*/rdf:first)* ?range.
@@ -422,9 +456,10 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
 
     def open_properties(self):
         open_properties = list(
-            self.onto.query(
+            self.__query(
                 """SELECT DISTINCT ?prop WHERE {
                     ?prop rdf:type rdf:Property .
+                    ?prop rdfs:range/(owl:unionOf/rdf:rest*/rdf:first)* ?range.
                     MINUS {
                         ?prop rdfs:domain ?o .
                     }
@@ -519,14 +554,12 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
 
     def property_count(self, cls: str):
         return list(
-            self.onto.query(
-                f"SELECT DISTINCT (COUNT(?s) as ?count) WHERE {{?s {cls} ?o}}"
-            )
+            self.__query(f"SELECT DISTINCT (COUNT(?s) as ?count) WHERE {{?s {cls} ?o}}")
         )[0][0].value
 
     def get_parents(self, cls: str) -> list[str]:
         parents = self.q_to_df_values(
-            f"SELECT DISTINCT ?p WHERE {{ {cls} rdfs:subClassOf* ?p. ?p rdf:type owl:Class }}"
+            f"""SELECT DISTINCT ?p WHERE {{ {cls} rdfs:subClassOf* ?p. }}"""
         )
         if "p" not in parents.columns:
             return []
@@ -556,7 +589,7 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
                     order by  DESC(?distance) 
                     """
         classes = list(
-            self.onto.query(
+            self.__query(
                 query,
             )
         )

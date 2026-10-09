@@ -708,4 +708,11 @@ class LLMQuery(Initationatable):
                     )
                     query_graph.relations.append(enriched_relation)
                 examples.append(query_graph)
+            if len(examples) < n:
+                print(
+                    f"Not enough examples found in the database, found {len(examples)}, generating {n - len(examples)} more"
+                )
+                new_examples = self.initiate(force=True, n_queries=n - len(examples))
+                if new_examples:
+                    examples.extend([e[1] for e in new_examples])
             return examples

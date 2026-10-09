@@ -2,26 +2,27 @@ from fastapi import (
     APIRouter,
     Query,
     Body,
-    BackgroundTasks,
 )
 
 
 from api.config import DEFAULT_MANMAN
-from model import GeneralizationQuery, Instance, Property, SparseOutLinks, Subject, SubjectLink
-from ontology import InstanceQuery
+from model import GeneralizationQuery, SparseOutLinks, Subject, SubjectLink
 from explorative.exp_model import (
     SubjectLinkDB,
     FuzzyQuery,
     FuzzyQueryResults,
 )
-from explorative.llm_query import QueryProgress, EnrichedEntitiesRelations
-from assistant.model import QueryGraph, Operations
 from sqlalchemy.orm import Session
+
+from api.router.classes.search import search_router
+from api.router.classes.instances import instances_router
 
 
 manman = DEFAULT_MANMAN
 
 classes_router = APIRouter(prefix="/classes")
+classes_router.include_router(search_router)
+classes_router.include_router(instances_router)
 
 
 @classes_router.get("/outlinks")
@@ -55,13 +56,6 @@ def get_link(
         return link.from_db(oman=manman.ontology_manager)
 
 
-@classes_router.post("/search")
-def search_classes(
-    q: FuzzyQuery = Body(FuzzyQuery()),
-) -> FuzzyQueryResults:
-    return manman.guidance_man.search_fuzzy(q)
-
-
 @classes_router.get("/relations")
 def get_relations(
     q: str | None = Query(None),
@@ -69,41 +63,6 @@ def get_relations(
     to_id: str | None = Query(None),
 ) -> list[SubjectLink]:
     return manman.guidance_man.search_links(q, from_id, to_id)
-
-
-@classes_router.get("/search/llm")
-def get_llm_results(
-    background_tasks: BackgroundTasks,
-    q: str = Query("working field of person"),
-) -> QueryProgress:
-    return manman.llm_query.start_query(q, background_tasks)
-
-
-@classes_router.get("/search/llm/running")
-def get_llm_results_running(
-    query_id: str = Query(),
-) -> QueryProgress | None:
-    return manman.llm_query.query_progress(query_id)
-
-
-@classes_router.get("/search/llm/examples")
-def get_llm_examples() -> list[EnrichedEntitiesRelations]:
-    return manman.llm_query.get_examples()
-
-
-@classes_router.post("/search/assistant")
-def get_assistant_results(
-    q: str = Query("working field of person"),
-    graph: QueryGraph = Body(...),
-) -> Operations:
-    key = f"{q}_{graph.model_dump_json()}"
-    cache = manman.assistant_cache[key]
-    if cache:
-        return cache
-    else:
-        operations = manman.iterative_assistant.run_query(q, graph)
-        manman.assistant_cache[key] = operations
-        return operations
 
 
 @classes_router.get("/full")
@@ -132,18 +91,3 @@ def get_most_generics(
     q: GeneralizationQuery = Body(GeneralizationQuery()),
 ) -> Subject:
     return manman.ontology_manager.get_most_generic_classes(q)
-
-
-@classes_router.get("/instances")
-def get_named_instance(cls: str = Query()) -> list[Subject]:
-    return manman.ontology_manager.get_named_individuals(cls)
-
-
-@classes_router.get("/instances/search")
-def get_named_instance_search(query: InstanceQuery = Query()) -> list[Instance]:
-    return manman.ontology_manager.get_instances(query)
-
-
-@classes_router.get("/instances/properties")
-def get_named_instance_properties(instance_id: str = Query()) -> dict[str, Property]:
-    return manman.ontology_manager.outgoing_edges_for(instance_id)

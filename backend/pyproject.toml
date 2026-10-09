@@ -3,7 +3,7 @@ name = "onset-backend"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.13,<3.14"
 dependencies = [
     "fastapi[standard]",
     "python-multipart",
@@ -48,6 +48,8 @@ dependencies = [
     "llama-cpp-python>=0.3.9",
     "baycomp>=1.0.3",
     "pingouin>=0.5.5",
+    "pillow>=12.3.0",
+    "simplejson>=4.2.0",
 ]
 
 [project.optional-dependencies]

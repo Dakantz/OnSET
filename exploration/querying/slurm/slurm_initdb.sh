@@ -9,9 +9,10 @@
 
 datasets=("dbpedia" "bto" "uniprot" "yago")
 
-selected_dataset=${datasets[$dataset_id]}
+selected_dataset=${datasets[$SLURM_ARRAY_TASK_ID]}
 cd ..
 source ../../backend/.venv/bin/activate
 
 echo "Running init-db for dataset $SLURM_ARRAY_TASK_ID"
+echo "Selected dataset: $selected_dataset"
 python init-db.py --dataset $selected_dataset

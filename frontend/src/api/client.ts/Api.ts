@@ -94,35 +94,7 @@ export interface AssistantSubQuery {
 }
 
 /** AssistantSubject */
-export interface AssistantSubjectInput {
-  /**
-   * Type
-   * @default "subject"
-   */
-  type?: "subject";
-  /** Subject Id */
-  subject_id: string;
-  /** Internal Id */
-  internal_id: string;
-  /**
-   * Subqueries
-   * @default []
-   */
-  subqueries?: AssistantSubQuery[];
-  /**
-   * X
-   * @default 0
-   */
-  x?: number;
-  /**
-   * Y
-   * @default 0
-   */
-  y?: number;
-}
-
-/** AssistantSubject */
-export interface AssistantSubjectOutput {
+export interface AssistantSubject {
   /**
    * Type
    * @default "subject"
@@ -151,11 +123,8 @@ export interface AssistantSubjectOutput {
 
 /** Body_load_ontology_management_ontology_post */
 export interface BodyLoadOntologyManagementOntologyPost {
-  /**
-   * Ontology
-   * @format binary
-   */
-  ontology: File;
+  /** Ontology */
+  ontology: string;
 }
 
 /** CandidateEntity */
@@ -237,6 +206,16 @@ export interface Constraint {
   value: string | null;
   /** Modifier */
   modifier: string | null;
+}
+
+/** DataTensorResp */
+export interface DataTensorResp {
+  /** Data */
+  data: number[];
+  /** Type */
+  type: "float32" | "float64" | "int32" | "int64";
+  /** Shape */
+  shape: number[];
 }
 
 /** EnrichedEntitiesRelations */
@@ -465,7 +444,7 @@ export interface Match {
 export interface Operation {
   operation: OperationType;
   /** Data */
-  data: AssistantLink | AssistantSubjectOutput | AssistantSubQuery;
+  data: AssistantLink | AssistantSubject | AssistantSubQuery;
 }
 
 /** Operations */
@@ -522,7 +501,7 @@ export interface QueryGraph {
    * Subjects
    * @default []
    */
-  subjects?: AssistantSubjectInput[];
+  subjects?: AssistantSubject[];
   /**
    * Links
    * @default []
@@ -723,6 +702,10 @@ export interface ValidationError {
   msg: string;
   /** Error Type */
   type: string;
+  /** Input */
+  input?: any;
+  /** Context */
+  ctx?: object;
 }
 
 import type {
@@ -1013,6 +996,234 @@ export class Api<
     /**
      * No description
      *
+     * @name GetLlmResultsClassesSearchLlmGet
+     * @summary Get Llm Results
+     * @request GET:/classes/search/llm
+     */
+    getLlmResultsClassesSearchLlmGet: (
+      query?: {
+        /**
+         * Q
+         * @default "working field of person"
+         */
+        q?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<QueryProgress, HTTPValidationError>({
+        path: `/classes/search/llm`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name GetLlmResultsRunningClassesSearchLlmRunningGet
+     * @summary Get Llm Results Running
+     * @request GET:/classes/search/llm/running
+     */
+    getLlmResultsRunningClassesSearchLlmRunningGet: (
+      query: {
+        /** Query Id */
+        query_id: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<QueryProgress | null, HTTPValidationError>({
+        path: `/classes/search/llm/running`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name GetLlmExamplesClassesSearchLlmExamplesGet
+     * @summary Get Llm Examples
+     * @request GET:/classes/search/llm/examples
+     */
+    getLlmExamplesClassesSearchLlmExamplesGet: (params: RequestParams = {}) =>
+      this.request<EnrichedEntitiesRelations[], any>({
+        path: `/classes/search/llm/examples`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name SearchClassesClassesSearchPost
+     * @summary Search Classes
+     * @request POST:/classes/search
+     */
+    searchClassesClassesSearchPost: (
+      data: FuzzyQuery,
+      params: RequestParams = {},
+    ) =>
+      this.request<FuzzyQueryResults, HTTPValidationError>({
+        path: `/classes/search`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name GetAssistantResultsClassesSearchAssistantPost
+     * @summary Get Assistant Results
+     * @request POST:/classes/search/assistant
+     */
+    getAssistantResultsClassesSearchAssistantPost: (
+      data: QueryGraph,
+      query?: {
+        /**
+         * Q
+         * @default "working field of person"
+         */
+        q?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<Operations, HTTPValidationError>({
+        path: `/classes/search/assistant`,
+        method: "POST",
+        query: query,
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name EncodeTextClassesSearchEncodeTextPost
+     * @summary Encode Text
+     * @request POST:/classes/search/encode/text
+     */
+    encodeTextClassesSearchEncodeTextPost: (
+      data: string,
+      params: RequestParams = {},
+    ) =>
+      this.request<DataTensorResp, HTTPValidationError>({
+        path: `/classes/search/encode/text`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name EncodeImageClassesSearchEncodeImagePost
+     * @summary Encode Image
+     * @request POST:/classes/search/encode/image
+     */
+    encodeImageClassesSearchEncodeImagePost: (
+      data: string,
+      params: RequestParams = {},
+    ) =>
+      this.request<DataTensorResp, HTTPValidationError>({
+        path: `/classes/search/encode/image`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name GetNamedInstanceClassesInstancesGet
+     * @summary Get Named Instance
+     * @request GET:/classes/instances
+     */
+    getNamedInstanceClassesInstancesGet: (
+      query: {
+        /** Cls */
+        cls: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<Subject[], HTTPValidationError>({
+        path: `/classes/instances`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name GetNamedInstanceSearchClassesInstancesSearchGet
+     * @summary Get Named Instance Search
+     * @request GET:/classes/instances/search
+     */
+    getNamedInstanceSearchClassesInstancesSearchGet: (
+      query: {
+        /** Cls */
+        cls: string;
+        /** Q */
+        q?: string | null;
+        /**
+         * Limit
+         * @default 10
+         */
+        limit?: number;
+        /**
+         * Skip
+         * @default 0
+         */
+        skip?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<Instance[], HTTPValidationError>({
+        path: `/classes/instances/search`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name GetNamedInstancePropertiesClassesInstancesPropertiesGet
+     * @summary Get Named Instance Properties
+     * @request GET:/classes/instances/properties
+     */
+    getNamedInstancePropertiesClassesInstancesPropertiesGet: (
+      query: {
+        /** Instance Id */
+        instance_id: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<Record<string, Property>, HTTPValidationError>({
+        path: `/classes/instances/properties`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
      * @name GetOutlinksClassesOutlinksGet
      * @summary Get Outlinks
      * @request GET:/classes/outlinks
@@ -1079,26 +1290,6 @@ export class Api<
     /**
      * No description
      *
-     * @name SearchClassesClassesSearchPost
-     * @summary Search Classes
-     * @request POST:/classes/search
-     */
-    searchClassesClassesSearchPost: (
-      data: FuzzyQuery,
-      params: RequestParams = {},
-    ) =>
-      this.request<FuzzyQueryResults, HTTPValidationError>({
-        path: `/classes/search`,
-        method: "POST",
-        body: data,
-        type: ContentType.Json,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
      * @name GetRelationsClassesRelationsGet
      * @summary Get Relations
      * @request GET:/classes/relations
@@ -1118,96 +1309,6 @@ export class Api<
         path: `/classes/relations`,
         method: "GET",
         query: query,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name GetLlmResultsClassesSearchLlmGet
-     * @summary Get Llm Results
-     * @request GET:/classes/search/llm
-     */
-    getLlmResultsClassesSearchLlmGet: (
-      query?: {
-        /**
-         * Q
-         * @default "working field of person"
-         */
-        q?: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<QueryProgress, HTTPValidationError>({
-        path: `/classes/search/llm`,
-        method: "GET",
-        query: query,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name GetLlmResultsRunningClassesSearchLlmRunningGet
-     * @summary Get Llm Results Running
-     * @request GET:/classes/search/llm/running
-     */
-    getLlmResultsRunningClassesSearchLlmRunningGet: (
-      query: {
-        /** Query Id */
-        query_id: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<QueryProgress | null, HTTPValidationError>({
-        path: `/classes/search/llm/running`,
-        method: "GET",
-        query: query,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name GetLlmExamplesClassesSearchLlmExamplesGet
-     * @summary Get Llm Examples
-     * @request GET:/classes/search/llm/examples
-     */
-    getLlmExamplesClassesSearchLlmExamplesGet: (params: RequestParams = {}) =>
-      this.request<EnrichedEntitiesRelations[], any>({
-        path: `/classes/search/llm/examples`,
-        method: "GET",
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name GetAssistantResultsClassesSearchAssistantPost
-     * @summary Get Assistant Results
-     * @request POST:/classes/search/assistant
-     */
-    getAssistantResultsClassesSearchAssistantPost: (
-      data: QueryGraph,
-      query?: {
-        /**
-         * Q
-         * @default "working field of person"
-         */
-        q?: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<Operations, HTTPValidationError>({
-        path: `/classes/search/assistant`,
-        method: "POST",
-        query: query,
-        body: data,
-        type: ContentType.Json,
         format: "json",
         ...params,
       }),
@@ -1300,84 +1401,6 @@ export class Api<
         method: "POST",
         body: data,
         type: ContentType.Json,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name GetNamedInstanceClassesInstancesGet
-     * @summary Get Named Instance
-     * @request GET:/classes/instances
-     */
-    getNamedInstanceClassesInstancesGet: (
-      query: {
-        /** Cls */
-        cls: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<Subject[], HTTPValidationError>({
-        path: `/classes/instances`,
-        method: "GET",
-        query: query,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name GetNamedInstanceSearchClassesInstancesSearchGet
-     * @summary Get Named Instance Search
-     * @request GET:/classes/instances/search
-     */
-    getNamedInstanceSearchClassesInstancesSearchGet: (
-      query: {
-        /** Cls */
-        cls: string;
-        /** Q */
-        q?: string | null;
-        /**
-         * Limit
-         * @default 10
-         */
-        limit?: number;
-        /**
-         * Skip
-         * @default 0
-         */
-        skip?: number;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<Instance[], HTTPValidationError>({
-        path: `/classes/instances/search`,
-        method: "GET",
-        query: query,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name GetNamedInstancePropertiesClassesInstancesPropertiesGet
-     * @summary Get Named Instance Properties
-     * @request GET:/classes/instances/properties
-     */
-    getNamedInstancePropertiesClassesInstancesPropertiesGet: (
-      query: {
-        /** Instance Id */
-        instance_id: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<Record<string, Property>, HTTPValidationError>({
-        path: `/classes/instances/properties`,
-        method: "GET",
-        query: query,
         format: "json",
         ...params,
       }),

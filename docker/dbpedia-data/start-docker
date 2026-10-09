@@ -1,0 +1,69 @@
+#!/bin/sh
+
+
+# Used to start/stop/restart the docker container for dbpedia data
+CONTAINER_NAME=dbpedia-data-tensors
+FORCE_RESTART=false
+INDEX_DIR=./dbpedia/index-encoded
+INDEX_NAME=dbpedia-encoded-tidx
+is_running() {
+    docker container ls -a -q -f name=$CONTAINER_NAME | grep -q .
+}
+stop_if_running() {
+    if is_running; then
+        echo "Container $CONTAINER_NAME is already running."
+        if [ "$FORCE_RESTART" = true ]; then
+            echo "Stopping container $CONTAINER_NAME..."
+            stop
+        else
+            exit 1
+        fi
+    else
+        echo "Container $CONTAINER_NAME is not running."
+    fi
+}
+start() {
+    stop_if_running
+    echo "Starting container $CONTAINER_NAME..."
+    docker run -d --name $CONTAINER_NAME -v ./dbpedia/index-encoded:/data -w /data -p 7012:8080 --entrypoint qlever-server qlever:tensors  -p 8080 -i $INDEX_NAME
+    docker logs -f $CONTAINER_NAME
+}
+start_interactive() {
+    stop_if_running
+    echo "Starting container $CONTAINER_NAME in interactive mode..."
+    docker run -it --rm -u $(id -u):$(id -g) --name $CONTAINER_NAME -v ./dbpedia/index-encoded:/data -w /data -p 7012:8080 qlever:tensors  bash
+
+}
+stop() {
+    docker stop $CONTAINER_NAME
+    docker rm $CONTAINER_NAME
+}
+restart() {
+    stop
+    start
+}
+
+
+case "$2" in
+    --force)
+        echo "Force restart enabled."
+        FORCE_RESTART=true
+        ;;
+esac
+
+case "$1" in
+    start)
+        start
+        ;;
+    start-interactive)
+        start_interactive
+        ;;
+    stop)
+        stop
+        ;;
+    restart)
+        restart
+        ;;
+    *)
+        echo "Usage: $0 {start|start-interactive|stop|restart}"
+esac

@@ -4,8 +4,8 @@
         <path :d="`M 0,0 V ${subquery.height / 2} H ${subquery.width * 0.2}`" class="subquery_connection" />
         <rect :x="subquery.width * 0.2" :y="0" :width="subquery.width * 0.8" :height="subquery.height"
             class="subquery_box" :class="query_statestyle" />
-        <circle v-show="show_editpoints && mode == DisplayMode.EDIT" :cx="subquery.width" :cy="0" :r="7" class="edit_point edit_point_delete"
-            @click="emit('delete', subquery)">
+        <circle v-show="show_editpoints && mode == DisplayMode.EDIT" :cx="subquery.width" :cy="0" :r="7"
+            class="edit_point edit_point_delete" @click="emit('delete', subquery)">
         </circle>
         <foreignObject :x="subquery.width * 0.2" :y="0" :width="subquery.width * 0.8" :height="subquery.height">
             <div class="subquery">
@@ -23,19 +23,22 @@
                     :constraint="(subquery as BooleanConstraint)" />
                 <Property v-if="(subquery.constraint_type == SubQueryType.QUERY_PROP)"
                     :query="(subquery as QueryProp)" />
+                <VectorSubquery v-if="(subquery.constraint_type == SubQueryType.VECTOR_SORT)"
+                    :constraint="(subquery as VectorSort)" />
             </div>
         </foreignObject>
     </g>
 </template>
 <script setup lang="ts">
-import { SubQuery, SubQueryType, DateConstraint, SubjectNode, NumberConstraint, StringConstraint, SubjectConstraint, BooleanConstraint, QueryProp, NodeState } from '@/utils/sparql/representation';
+import { SubQuery, SubQueryType, DateConstraint, SubjectNode, NumberConstraint, StringConstraint, SubjectConstraint, BooleanConstraint, QueryProp, NodeState, VectorSort } from '@/utils/sparql/representation';
 import { defineProps, defineModel, computed, reactive, watch } from 'vue'
-import NumberConstraintEditor from './constraints/NumberConstraintEditor.vue';
-import StringConstraintEditor from './constraints/StringConstraintEditor.vue';
-import DateConstraintEditor from './constraints/DateConstraintEditor.vue';
-import SubjectConstraintEditor from './constraints/SubjectConstraintEditor.vue';
+import NumberConstraintEditor from './subqueries/NumberConstraintEditor.vue';
+import StringConstraintEditor from './subqueries/StringConstraintEditor.vue';
+import DateConstraintEditor from './subqueries/DateConstraintEditor.vue';
+import SubjectConstraintEditor from './subqueries/SubjectConstraintEditor.vue';
 import { DisplayMode, type InstanceSelectorOpenEvent } from '@/utils/sparql/helpers';
-import BooleanConstraintEditor from './constraints/BooleanConstraintEditor.vue';
+import BooleanConstraintEditor from './subqueries/BooleanConstraintEditor.vue';
+import VectorSubquery from './subqueries/VectorSubquery.vue';
 import Property from './Property.vue';
 import type { NodeDiff } from '@/utils/sparql/diff';
 const emit = defineEmits<{
